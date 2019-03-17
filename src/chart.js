@@ -1,6 +1,6 @@
 class Chart {
     constructor(canvas, data) {
-        this.canvas = canvas;
+        //this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.data = data;
         this.xAxis;
@@ -19,21 +19,43 @@ class Chart {
         this.yScaleFactor = 1;
         this.yMiniMapScaleFactor = 1;
         this.miniMapHeight = 50;
+        this.miniMapBorderColor = 'rgba(255, 165, 0, 0.5)';
+        this.miniMapBorderWidth = 2;
+        this.dragLineWidth = 5;
 
-        canvas.addEventListener('mousemove', this._handleMouseMove);
-        canvas.addEventListener('mousedown', this._handleMouseDown);
-        canvas.addEventListener('mouseup', this._handleMouseUp);
-        canvas.addEventListener('mouseout', this._handleMouseOut);
+        this.leftDragLine = { x: 0, y: 0, width: this.dragLineWidth, heigth: this.miniMapHeight };
+        this.rigthDragLine = { x: 0, y: 0, width: this.dragLineWidth, heigth: this.miniMapHeight };
+
+        //canvas.addEventListener('mousemove', this._handleMouseMove);
+        canvas.addEventListener('mousedown', this);
+        //canvas.addEventListener('mouseup', this._handleMouseUp);
+        //canvas.addEventListener('mouseout', this._handleMouseOut);
 
         this._init();
         this._parseData();
         this._calculateData();
-        this._drawChart();
-        this._drawMiniMap();
+        this._drawChartData();
+        this._drawMiniMapData();
+        this._drawMiniMapFrame();
+    }
+
+    handleEvent(event) {
+        switch (event.type) {
+            case 'mousedown':
+                this._handleMouseDown(event);
+        }
     }
 
     _handleMouseDown(event) {
         console.log('mousedown:' + event.offsetX + ' ' + event.offsetY);
+
+        if (event.offsetX >= this.leftDragLine.x && event.offsetX <= this.leftDragLine.x + this.leftDragLine.width) {
+            console.log('left');
+        }
+
+        if (event.offsetX >= this.rigthDragLine.x && event.offsetX <= this.rigthDragLine.x + this.rigthDragLine.width) {
+            console.log('right');
+        }
     }
 
     _handleMouseUp(event) {
@@ -53,8 +75,7 @@ class Chart {
         this.xEndIndex = this.data.columns[0].length;
     }
 
-    _drawChart() {
-        // draw chart
+    _drawChartData() {
         this.yAxis.forEach((element) => {
             this.ctx.beginPath();
             this.ctx.strokeStyle = this.data.colors[element.name];
@@ -65,8 +86,7 @@ class Chart {
         });
     }
 
-    _drawMiniMap() {
-        // draw mini map chart
+    _drawMiniMapData() {
         this.yMiniMapAxis.forEach((elemnt) => {
             this.ctx.beginPath();
             this.ctx.strokeStyle = this.data.colors[elemnt.name];
@@ -75,33 +95,39 @@ class Chart {
             }
             this.ctx.stroke();
         });
+    }
 
-        // draw mini map frame
+    _drawMiniMapFrame() {
         let borderWidth = 1;
         let bottomBorderWidth = 2;
         let sideBorderWidth = 2.5;
-        let miniMapX = this.xAxis.values[0];
+        let miniMapX = this.xMiniMapAxis.values[this.xStartIndex];
         let miniMapY = this.canvasHeight - this.miniMapHeight;
 
+        this.ctx.strokeStyle = this.miniMapBorderColor;
+
         // left line
-        this.ctx.strokeStyle = 'rgba(255, 165, 0, 0.5)';
-        this.ctx.lineWidth = 5;
+        this.ctx.lineWidth = this.dragLineWidth;
         this.ctx.beginPath();
         this.ctx.moveTo(miniMapX + sideBorderWidth, miniMapY);
         this.ctx.lineTo(miniMapX + sideBorderWidth, miniMapY + this.miniMapHeight - bottomBorderWidth);
         this.ctx.stroke();
+        this.leftDragLine.x = miniMapX;
+        this.leftDragLine.y = miniMapY;
 
         // rigth line
         this.ctx.beginPath();
-        this.ctx.moveTo(miniMapX + this.canvasWidth - sideBorderWidth, miniMapY);
+        this.ctx.moveTo(this.xMiniMapAxis.values[this.xEndIndex - 2] - miniMapX - sideBorderWidth, miniMapY);
         this.ctx.lineTo(
-            miniMapX + this.canvasWidth - sideBorderWidth,
+            miniMapX + this.xMiniMapAxis.values[this.xEndIndex - 2] - sideBorderWidth,
             miniMapY + this.miniMapHeight - bottomBorderWidth
         );
         this.ctx.stroke();
+        this.rigthDragLine.x = miniMapX + this.xMiniMapAxis.values[this.xEndIndex - 2] - this.dragLineWidth;
+        this.rigthDragLine.y = miniMapY;
 
         // top line
-        this.ctx.lineWidth = 2;
+        this.ctx.lineWidth = this.miniMapBorderWidth;
         this.ctx.beginPath();
         this.ctx.moveTo(miniMapX, miniMapY - borderWidth);
         this.ctx.lineTo(miniMapX + this.canvasWidth, miniMapY - borderWidth);
