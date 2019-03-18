@@ -16,13 +16,15 @@ class ChartBuilder {
         this.miniMap = miniMap;
         this.miniMap.frame.border.color = 'rgba(255, 165, 0, 0.5)';
 
+        /* internal veriables */
         this.isDragging = false;
         this.draggingObj = '';
+        this.clickX = 0;
 
         canvas.addEventListener('mousedown', this);
         canvas.addEventListener('mouseup', this);
-        //canvas.addEventListener('mousemove', this._handleMouseMove);
-        //canvas.addEventListener('mouseout', this._handleMouseOut);
+        canvas.addEventListener('mousemove', this);
+        canvas.addEventListener('mouseout', this);
 
         this._init();
         this._parseData();
@@ -41,28 +43,31 @@ class ChartBuilder {
             case 'mouseup':
                 this._handleMouseUp(event);
                 break;
+            case 'mousemove':
+                this._handleMouseMove(event);
+                break;
+            case 'mouseout':
+                this._handleMouseOut(event);
+                break;
         }
     }
 
     _handleMouseDown(event) {
-        console.log('mousedown:' + event.offsetX + ' ' + event.offsetY);
-
         if (
-            event.offsetX >= this.miniMap.frame.x &&
-            event.offsetX <= this.miniMap.frame.leftDragLine.x + this.miniMap.frame.leftDragLine.width &&
-            event.offsetY >= this.miniMap.frame.y &&
+            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.leftDragLine.x &&
+            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
+                this.miniMap.frame.leftDragLine.x + this.miniMap.frame.leftDragLine.width &&
+            event.offsetY >= this.miniMap.frame.leftDragLine.y &&
             event.offsetY <= this.miniMap.frame.leftDragLine.y + this.miniMap.frame.leftDragLine.height
         ) {
-            console.log('left');
             this.isDragging = true;
             this.draggingObj = 'leftDragLine';
         } else if (
-            event.offsetX >= this.miniMap.frame.rightDragLine.x &&
-            event.offsetX <= this.miniMap.frame.rightDragLine.x + this.miniMap.frame.rightDragLine.width &&
+            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.rightDragLine.x &&
+            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <= this.miniMap.width &&
             event.offsetY >= this.miniMap.frame.rightDragLine.y &&
             event.offsetY <= this.miniMap.frame.rightDragLine.y + this.miniMap.frame.rightDragLine.height
         ) {
-            console.log('right');
             this.isDragging = true;
             this.draggingObj = 'rightDragLine';
         } else if (
@@ -71,29 +76,76 @@ class ChartBuilder {
             event.offsetY >= this.miniMap.frame.rect.y &&
             event.offsetY <= this.miniMap.frame.rect.y + this.miniMap.frame.rect.height
         ) {
-            console.log('frame');
             this.isDragging = true;
             this.draggingObj = 'dragFrame';
+            this.clickX = event.offsetX;
         }
     }
 
     _handleMouseUp(event) {
-        console.log('mouseup:' + event.offsetX + ' ' + event.offsetY);
         this.isDragging = false;
         this.draggingObj = '';
     }
 
     _handleMouseMove(event) {
-        console.log('mousemove:' + event.offsetX + ' ' + event.offsetY);
+        if (this.isDragging == true && this.draggingObj == 'leftDragLine') {
+            // drag left line
+            for (let i = 0; i < this.chart.displayEndIndex - this.miniMap.frame.minDisplayPositions - 2; i++) {
+                if (
+                    event.offsetX >= this.miniMap.xAxis.values[i] &&
+                    event.offsetX <= this.miniMap.xAxis.values[i + 1]
+                ) {
+                    this.chart.displayStartIndex = i;
+                    break;
+                }
+            }
+        } else if (this.isDragging == true && this.draggingObj == 'dragFrame') {
+            // drag frame
+            if (this.clickX > event.offsetX) {
+                if (this.chart.displayStartIndex > 0) {
+                    this.chart.displayStartIndex -= 1;
+                    this.chart.displayEndIndex -= 1;
+                }
+            } else if (this.clickX < event.offsetX) {
+                if (this.chart.displayEndIndex < this.miniMap.xAxis.values.length - 1) {
+                    this.chart.displayStartIndex += 1;
+                    this.chart.displayEndIndex += 1;
+                }
+            }
+            this.clickX = event.offsetX;
+        } else if (this.isDragging == true && this.draggingObj == 'rightDragLine') {
+            // drag right frame
+            for (
+                let i = this.miniMap.xAxis.values.length - 1;
+                i > this.chart.displayStartIndex + this.miniMap.frame.minDisplayPositions;
+                i--
+            ) {
+                if (
+                    event.offsetX <= this.miniMap.xAxis.values[i] &&
+                    event.offsetX >= this.miniMap.xAxis.values[i - 1]
+                ) {
+                    this.chart.displayEndIndex = i;
+                    break;
+                }
+            }
+        }
+
+        this._drawMiniMapData();
+        this._drawMiniMapFrame();
     }
 
     _handleMouseOut(event) {
-        console.log('mouseout:' + event.offsetX + ' ' + event.offsetY);
+        this.isDragging = false;
+        this.draggingObj = '';
     }
 
     _init() {
         this.chart.displayStartIndex = 0;
-        this.chart.displayEndIndex = this.data.columns[0].length;
+        // -1 because of array indexation, and -1 because first element is not a value = -2
+        this.chart.displayEndIndex = this.data.columns[0].length - 2;
+        this.miniMap.x = 0;
+        this.miniMap.y = this.canvas.height - this.miniMap.height;
+        this.miniMap.width = this.canvas.width;
     }
 
     _drawChartData() {
@@ -108,6 +160,10 @@ class ChartBuilder {
     }
 
     _drawMiniMapData() {
+        /* clear mini map rectangle and reset settings for drawing */
+        this.canvas.ctx.clearRect(this.miniMap.x, this.miniMap.y - 3, this.miniMap.width, this.miniMap.height + 3);
+        this.canvas.ctx.lineWidth = 1;
+
         this.miniMap.yAxis.columns.forEach((elemnt) => {
             this.canvas.ctx.beginPath();
             this.canvas.ctx.strokeStyle = this.data.colors[elemnt.name];
@@ -119,9 +175,6 @@ class ChartBuilder {
     }
 
     _drawMiniMapFrame() {
-        let borderWidth = 1;
-        let bottomBorderWidth = 2;
-        let sideBorderWidth = 2.5;
         let miniMapX = this.miniMap.xAxis.values[this.chart.displayStartIndex];
         let miniMapY = this.canvas.height - this.miniMap.height;
 
@@ -130,8 +183,11 @@ class ChartBuilder {
         // left line
         this.canvas.ctx.lineWidth = this.miniMap.frame.dragLineWidth;
         this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(miniMapX + sideBorderWidth, miniMapY);
-        this.canvas.ctx.lineTo(miniMapX + sideBorderWidth, miniMapY + this.miniMap.height - bottomBorderWidth);
+        this.canvas.ctx.moveTo(miniMapX + this.miniMap.frame.dragLineWidth / 2, miniMapY);
+        this.canvas.ctx.lineTo(
+            miniMapX + this.miniMap.frame.dragLineWidth / 2,
+            miniMapY + this.miniMap.height - this.miniMap.frame.border.width
+        );
         this.canvas.ctx.stroke();
         this.miniMap.frame.leftDragLine.x = miniMapX;
         this.miniMap.frame.leftDragLine.y = miniMapY;
@@ -139,29 +195,35 @@ class ChartBuilder {
         // rigth line
         this.canvas.ctx.beginPath();
         this.canvas.ctx.moveTo(
-            this.miniMap.xAxis.values[this.chart.displayEndIndex - 2] - miniMapX - sideBorderWidth,
+            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]) - this.miniMap.frame.dragLineWidth / 2,
             miniMapY
         );
         this.canvas.ctx.lineTo(
-            miniMapX + this.miniMap.xAxis.values[this.chart.displayEndIndex - 2] - sideBorderWidth,
-            miniMapY + this.miniMap.height - bottomBorderWidth
+            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]) - this.miniMap.frame.dragLineWidth / 2,
+            miniMapY + this.miniMap.height - this.miniMap.frame.border.width
         );
         this.canvas.ctx.stroke();
         this.miniMap.frame.rightDragLine.x =
-            miniMapX + this.miniMap.xAxis.values[this.chart.displayEndIndex - 2] - this.miniMap.frame.dragLineWidth;
+            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]) - this.miniMap.frame.border.width;
         this.miniMap.frame.rightDragLine.y = miniMapY;
 
         // top line
         this.canvas.ctx.lineWidth = this.miniMap.frame.border.width;
         this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(miniMapX, miniMapY - borderWidth);
-        this.canvas.ctx.lineTo(miniMapX + this.canvas.width, miniMapY - borderWidth);
+        this.canvas.ctx.moveTo(miniMapX, miniMapY - this.miniMap.frame.border.width / 2);
+        this.canvas.ctx.lineTo(
+            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]),
+            miniMapY - this.miniMap.frame.border.width / 2
+        );
         this.canvas.ctx.stroke();
 
         // bottom line
         this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(miniMapX, miniMapY + this.miniMap.height - borderWidth);
-        this.canvas.ctx.lineTo(miniMapX + this.canvas.width, miniMapY + this.miniMap.height - borderWidth);
+        this.canvas.ctx.moveTo(miniMapX, miniMapY + this.miniMap.height - this.miniMap.frame.border.width / 2);
+        this.canvas.ctx.lineTo(
+            this.miniMap.xAxis.values[this.chart.displayEndIndex],
+            miniMapY + this.miniMap.height - this.miniMap.frame.border.width / 2
+        );
         this.canvas.ctx.stroke();
 
         this.miniMap.frame.rect.x = this.miniMap.frame.leftDragLine.x + this.miniMap.frame.leftDragLine.width;
@@ -172,7 +234,7 @@ class ChartBuilder {
 
     _parseData() {
         let sliceStartIndex = this.chart.displayStartIndex + 1;
-        let sliceEndIndex = this.chart.displayEndIndex;
+        let sliceEndIndex = this.chart.displayEndIndex + 2;
         this.data.columns.slice(0, 1).forEach((column) => {
             this.chart.xAxis = {
                 name: column[0],
