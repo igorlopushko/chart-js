@@ -14,7 +14,8 @@ class ChartBuilder {
         this.data = data;
         this.chart = chart;
         this.miniMap = miniMap;
-        this.miniMap.frame.border.color = 'rgba(255, 165, 0, 0.5)';
+        this.miniMap.frame.border.color = 'rgba(255, 165, 0, 0.6)';
+        this.miniMap.frame.border.fadeColor = 'rgba(255, 165, 0, 0.4)';
 
         /* internal veriables */
         this.isDragging = false;
@@ -178,7 +179,7 @@ class ChartBuilder {
         let miniMapX = this.miniMap.xAxis.values[this.chart.displayStartIndex];
         let miniMapY = this.canvas.height - this.miniMap.height;
 
-        this.canvas.ctx.strokeStyle = miniMap.frame.border.color;
+        this.canvas.ctx.strokeStyle = this.miniMap.frame.border.color;
 
         // left line
         this.canvas.ctx.lineWidth = this.miniMap.frame.dragLineWidth;
@@ -230,6 +231,26 @@ class ChartBuilder {
         this.miniMap.frame.rect.y = this.miniMap.frame.leftDragLine.y;
         this.miniMap.frame.rect.height = this.miniMap.frame.leftDragLine.height;
         this.miniMap.frame.rect.width = this.miniMap.frame.rightDragLine.x - this.miniMap.frame.rect.x;
+
+        this.canvas.ctx.fillStyle = this.miniMap.frame.border.fadeColor;
+
+        if (this.miniMap.frame.leftDragLine.x > 0) {
+            this.canvas.ctx.fillRect(
+                0,
+                miniMapY - this.miniMap.frame.border.width / 2 - this.miniMap.frame.border.width / 2,
+                this.miniMap.frame.leftDragLine.x,
+                this.miniMap.height + -this.miniMap.frame.border.width / 2 + this.miniMap.frame.border.width + 1
+            );
+        }
+
+        if (this.miniMap.frame.rightDragLine.x + this.miniMap.frame.dragLineWidth < this.miniMap.width) {
+            this.canvas.ctx.fillRect(
+                this.miniMap.frame.rightDragLine.x + 2,
+                miniMapY - this.miniMap.frame.border.width / 2 - this.miniMap.frame.border.width / 2,
+                this.miniMap.width - this.miniMap.frame.rightDragLine.x + this.miniMap.frame.dragLineWidth,
+                this.miniMap.height + -this.miniMap.frame.border.width / 2 + this.miniMap.frame.border.width + 1
+            );
+        }
     }
 
     _parseData() {
