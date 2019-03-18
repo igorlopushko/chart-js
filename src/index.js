@@ -1,4 +1,4 @@
-import ChartBuilder from './chart-builder';
+import ChartBuilder from './chart-builder/chartBuilder';
 
 let data = [
     {
@@ -3296,5 +3296,5 @@ let data = [
 let canvas = document.getElementById('canvas');
 
 if (canvas.getContext) {
-    let chart = new ChartBuilder(canvas, data[0]);
+    let builder = new ChartBuilder(canvas, data[0]);
 }

@@ -1,5 +1,6 @@
 import chart from './chart';
-import miniMap from './mini-map';
+import miniMap from './miniMap';
+import * as ActionTypes from './dragActionTypes';
 
 class ChartBuilder {
     constructor(canvas, data) {
@@ -26,7 +27,6 @@ class ChartBuilder {
         canvas.addEventListener('mouseup', this);
         canvas.addEventListener('mousemove', this);
         canvas.addEventListener('mouseout', this);
-
         this._init();
         this._parseData();
         this._calculateData();
@@ -54,31 +54,18 @@ class ChartBuilder {
     }
 
     _handleMouseDown(event) {
-        if (
-            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.leftDragLine.x &&
-            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
-                this.miniMap.frame.leftDragLine.x + this.miniMap.frame.leftDragLine.width &&
-            event.offsetY >= this.miniMap.frame.leftDragLine.y &&
-            event.offsetY <= this.miniMap.frame.leftDragLine.y + this.miniMap.frame.leftDragLine.height
-        ) {
+        if (this._isOverLeftDragLine()) {
             this.isDragging = true;
-            this.draggingObj = 'leftDragLine';
-        } else if (
-            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.rightDragLine.x &&
-            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <= this.miniMap.width &&
-            event.offsetY >= this.miniMap.frame.rightDragLine.y &&
-            event.offsetY <= this.miniMap.frame.rightDragLine.y + this.miniMap.frame.rightDragLine.height
-        ) {
+            this.draggingObj = ActionTypes.DRAG_LEFT_LINE;
+            this.canvas.ref.style.cursor = 'col-resize';
+        } else if (this._isOverRightDragLine()) {
             this.isDragging = true;
-            this.draggingObj = 'rightDragLine';
-        } else if (
-            event.offsetX >= this.miniMap.frame.rect.x &&
-            event.offsetX <= this.miniMap.frame.rect.x + this.miniMap.frame.rect.width &&
-            event.offsetY >= this.miniMap.frame.rect.y &&
-            event.offsetY <= this.miniMap.frame.rect.y + this.miniMap.frame.rect.height
-        ) {
+            this.draggingObj = ActionTypes.DRAG_RIGHT_LINE;
+            this.canvas.ref.style.cursor = 'col-resize';
+        } else if (this._isOverDragFrame()) {
             this.isDragging = true;
-            this.draggingObj = 'dragFrame';
+            this.draggingObj = ActionTypes.DRAG_FRAME;
+            this.canvas.ref.style.cursor = 'move';
             this.clickX = event.offsetX;
         }
     }
@@ -86,10 +73,19 @@ class ChartBuilder {
     _handleMouseUp(event) {
         this.isDragging = false;
         this.draggingObj = '';
+        this.canvas.ref.style.cursor = 'default';
     }
 
     _handleMouseMove(event) {
-        if (this.isDragging == true && this.draggingObj == 'leftDragLine') {
+        if (this._isOverLeftDragLine() || this._isOverRightDragLine()) {
+            this.canvas.ref.style.cursor = 'col-resize';
+        } else if (this._isOverDragFrame()) {
+            this.canvas.ref.style.cursor = 'move';
+        } else {
+            this.canvas.ref.style.cursor = 'default';
+        }
+
+        if (this.isDragging == true && this.draggingObj == ActionTypes.DRAG_LEFT_LINE) {
             // drag left line
             for (let i = 0; i < this.chart.displayEndIndex - this.miniMap.frame.minDisplayPositions - 2; i++) {
                 if (
@@ -100,7 +96,7 @@ class ChartBuilder {
                     break;
                 }
             }
-        } else if (this.isDragging == true && this.draggingObj == 'dragFrame') {
+        } else if (this.isDragging == true && this.draggingObj == ActionTypes.DRAG_FRAME) {
             // drag frame
             if (this.clickX > event.offsetX) {
                 if (this.chart.displayStartIndex > 0) {
@@ -114,7 +110,7 @@ class ChartBuilder {
                 }
             }
             this.clickX = event.offsetX;
-        } else if (this.isDragging == true && this.draggingObj == 'rightDragLine') {
+        } else if (this.isDragging == true && this.draggingObj == ActionTypes.DRAG_RIGHT_LINE) {
             // drag right frame
             for (
                 let i = this.miniMap.xAxis.values.length - 1;
@@ -138,6 +134,35 @@ class ChartBuilder {
     _handleMouseOut(event) {
         this.isDragging = false;
         this.draggingObj = '';
+    }
+
+    _isOverLeftDragLine() {
+        return (
+            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.leftDragLine.x &&
+            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
+                this.miniMap.frame.leftDragLine.x + this.miniMap.frame.leftDragLine.width &&
+            event.offsetY >= this.miniMap.frame.leftDragLine.y &&
+            event.offsetY <= this.miniMap.frame.leftDragLine.y + this.miniMap.frame.leftDragLine.height
+        );
+    }
+
+    _isOverRightDragLine() {
+        return (
+            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.rightDragLine.x &&
+            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
+                this.miniMap.frame.rightDragLine.x + this.miniMap.frame.rightDragLine.width &&
+            event.offsetY >= this.miniMap.frame.rightDragLine.y &&
+            event.offsetY <= this.miniMap.frame.rightDragLine.y + this.miniMap.frame.rightDragLine.height
+        );
+    }
+
+    _isOverDragFrame() {
+        return (
+            event.offsetX >= this.miniMap.frame.rect.x &&
+            event.offsetX <= this.miniMap.frame.rect.x + this.miniMap.frame.rect.width &&
+            event.offsetY >= this.miniMap.frame.rect.y &&
+            event.offsetY <= this.miniMap.frame.rect.y + this.miniMap.frame.rect.height
+        );
     }
 
     _init() {
