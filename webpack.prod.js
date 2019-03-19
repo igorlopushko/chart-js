@@ -10,8 +10,8 @@ export default {
     target: 'web',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        publicPath: '/',
-        filename: '[name].js',
+        // rename to proper file name
+        filename: 'bundle.js',
     },
     devServer: {
         contentBase: path.join(__dirname, 'src'),
@@ -33,7 +33,7 @@ export default {
                 minifyCSS: true,
                 minifyURLs: true,
             },
-            inject: true,
+            inject: false,
             // Properties you define here are available in index.html
             // using htmlWebpackPlugin.options.varName
             trackJSToken: '43ad216f57d94259968435894490a5c7',
