@@ -5,9 +5,13 @@
     "scripts": {
         "prestart": "babel-node tools/start-message.js",
         "start": "npm-run-all --parallel open:src lint:watch",
-        "open:src": "babel-node tools/server.js",
-        "lint": "node_modules/.bin/esw webpack.config.* src tools",
-        "lint:watch": "npm run lint -- --watch"
+        "open:src": "babel-node tools/srvDev.js",
+        "lint": "node_modules/.bin/esw webpack.* src tools",
+        "lint:watch": "npm run lint -- --watch",
+        "clean-dist": "rimraf ./dist && mkdir dist",
+        "prebuild": "npm-run-all clean-dist lint",
+        "build": "babel-node tools/build.js",
+        "postbuild": "babel-node tools/srvProd.js"
     },
     "author": "Igor Lopushko",
     "license": "MIT",
@@ -24,6 +28,8 @@
         "@babel/preset-env": "^7.3.4",
         "@babel/register": "^7.0.0",
         "babel-loader": "^8.0.5",
+        "babel-preset-minify": "^0.5.0",
+        "chalk": "^2.4.2",
         "cheerio": "1.0.0-rc.2",
         "colors": "1.3.3",
         "compression": "1.7.3",
@@ -40,6 +46,7 @@
         "expect": "24.0.0",
         "express": "^4.16.4",
         "file-loader": "^3.0.1",
+        "html-webpack-plugin": "^3.2.0",
         "jquery": "^3.3.1",
         "jsdom": "^13.2.0",
         "mocha": "5.2.0",
