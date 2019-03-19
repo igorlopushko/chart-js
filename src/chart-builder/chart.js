@@ -2,7 +2,7 @@ export default {
     yAxis: {
         columns: [
             {
-                values: [],
+                values: [{scaledValue: 0, originalValue: 0}],
                 originalValues: [],
                 name: '',
                 color: '',
@@ -12,7 +12,7 @@ export default {
         maxValue: 0,
     },
     xAxis: {
-        values: [],
+        values: [{scaledValue: 0, originalValue: 0}],
         originalValues: [],
         scaleFactor: 0.0,
     },

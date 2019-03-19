@@ -15,8 +15,8 @@ class ChartBuilder {
         this.data = data;
         this.chart = chart;
         this.miniMap = miniMap;
-        this.miniMap.frame.border.color = 'rgba(255, 165, 0, 0.6)';
-        this.miniMap.frame.border.fadeColor = 'rgba(255, 165, 0, 0.4)';
+        this.miniMap.frame.border.color = 'rgba(225, 237, 247, 0.8)';
+        this.miniMap.frame.border.fadeColor = 'rgba(225, 237, 247, 0.4)';
 
         /* internal veriables */
         this.isDragging = false;
@@ -27,9 +27,11 @@ class ChartBuilder {
         canvas.addEventListener('mouseup', this);
         canvas.addEventListener('mousemove', this);
         canvas.addEventListener('mouseout', this);
+
         this._init();
         this._parseData();
-        this._calculateData();
+        this._calculateChartData();
+        this._calculateMiniMapData();
         this._drawChartData();
         this._drawMiniMapData();
         this._drawMiniMapFrame();
@@ -93,6 +95,7 @@ class ChartBuilder {
                     event.offsetX <= this.miniMap.xAxis.values[i + 1]
                 ) {
                     this.chart.displayStartIndex = i;
+                    this._updateChart();
                     break;
                 }
             }
@@ -109,6 +112,7 @@ class ChartBuilder {
                     this.chart.displayEndIndex += 1;
                 }
             }
+            this._updateChart();
             this.clickX = event.offsetX;
         } else if (this.isDragging == true && this.draggingObj == ActionTypes.DRAG_RIGHT_LINE) {
             // drag right frame
@@ -122,11 +126,17 @@ class ChartBuilder {
                     event.offsetX >= this.miniMap.xAxis.values[i - 1]
                 ) {
                     this.chart.displayEndIndex = i;
+                    this._updateChart();
                     break;
                 }
             }
         }
+    }
 
+    _updateChart() {
+        this._clearCanvas();
+        this._calculateChartData();
+        this._drawChartData();
         this._drawMiniMapData();
         this._drawMiniMapFrame();
     }
@@ -134,35 +144,6 @@ class ChartBuilder {
     _handleMouseOut(event) {
         this.isDragging = false;
         this.draggingObj = '';
-    }
-
-    _isOverLeftDragLine() {
-        return (
-            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.leftDragLine.x &&
-            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
-                this.miniMap.frame.leftDragLine.x + this.miniMap.frame.leftDragLine.width &&
-            event.offsetY >= this.miniMap.frame.leftDragLine.y &&
-            event.offsetY <= this.miniMap.frame.leftDragLine.y + this.miniMap.frame.leftDragLine.height
-        );
-    }
-
-    _isOverRightDragLine() {
-        return (
-            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.rightDragLine.x &&
-            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
-                this.miniMap.frame.rightDragLine.x + this.miniMap.frame.rightDragLine.width &&
-            event.offsetY >= this.miniMap.frame.rightDragLine.y &&
-            event.offsetY <= this.miniMap.frame.rightDragLine.y + this.miniMap.frame.rightDragLine.height
-        );
-    }
-
-    _isOverDragFrame() {
-        return (
-            event.offsetX >= this.miniMap.frame.rect.x &&
-            event.offsetX <= this.miniMap.frame.rect.x + this.miniMap.frame.rect.width &&
-            event.offsetY >= this.miniMap.frame.rect.y &&
-            event.offsetY <= this.miniMap.frame.rect.y + this.miniMap.frame.rect.height
-        );
     }
 
     _init() {
@@ -174,20 +155,26 @@ class ChartBuilder {
         this.miniMap.width = this.canvas.width;
     }
 
+    _clearCanvas() {
+        this.canvas.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
     _drawChartData() {
+        this.canvas.ctx.lineWidth = 1;
+
         this.chart.yAxis.columns.forEach((element) => {
             this.canvas.ctx.beginPath();
             this.canvas.ctx.strokeStyle = this.data.colors[element.name];
             for (let i = 0; i < element.values.length; i++) {
-                this.canvas.ctx.lineTo(this.chart.xAxis.values[i], element.values[i]);
+                this.canvas.ctx.lineTo(this.chart.xAxis.values[i].scaledValue, element.values[i].scaledValue);
             }
+
             this.canvas.ctx.stroke();
         });
     }
 
     _drawMiniMapData() {
         /* clear mini map rectangle and reset settings for drawing */
-        this.canvas.ctx.clearRect(this.miniMap.x, this.miniMap.y - 3, this.miniMap.width, this.miniMap.height + 3);
         this.canvas.ctx.lineWidth = 1;
 
         this.miniMap.yAxis.columns.forEach((elemnt) => {
@@ -307,34 +294,56 @@ class ChartBuilder {
         });
     }
 
-    _calculateData() {
+    _calculateChartData() {
         // calcualate axis scale factor
-        let maxValue = this._findMaxValue();
-        this.chart.xAxis.scaleFactor = this.canvas.width / (this.chart.xAxis.originalValues.length - 1);
+        let maxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
+        //let maxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
+        this.chart.xAxis.values = new Array();
+        this.chart.yAxis.columns.forEach((element) => {
+            element.values = new Array();
+        });
+        this.chart.xAxis.scaleFactor = this.canvas.width / (this.chart.displayEndIndex - this.chart.displayStartIndex);
         this.chart.yAxis.scaleFactor = this.canvas.height / maxValue;
-        this.miniMap.xAxis.scaleFactor = this.canvas.width / (this.chart.xAxis.originalValues.length - 1);
-        this.miniMap.yAxis.scaleFactor = this.miniMap.height / maxValue;
 
         // get minimap scale factor to multiply Y values
         // shifts all values up to free space for minimap
         let miniMapScaleShift = (this.canvas.height - this.miniMap.height) / this.canvas.height;
 
         // calculate X axis values
-        this.chart.xAxis.originalValues.forEach((element, index) => {
-            this.chart.xAxis.values.push(index * this.chart.xAxis.scaleFactor);
+        let index = 0;
+        for (let i = this.chart.displayStartIndex; i <= this.chart.displayEndIndex; i++) {
+            this.chart.xAxis.values.push({
+                scaledValue: index * this.chart.xAxis.scaleFactor,
+                originalValue: this.chart.xAxis.originalValues[i],
+            });
+            index++;
+        }
+
+        // calculate Y axis values
+        this.chart.yAxis.columns.forEach((column) => {
+            for (let i = this.chart.displayStartIndex; i <= this.chart.displayEndIndex; i++) {
+                let scaledY = column.originalValues[i] * this.chart.yAxis.scaleFactor * miniMapScaleShift;
+                let y = this.canvas.height - scaledY - this.miniMap.height;
+                column.values.push({
+                    scaledValue: y,
+                    originalValue: column.originalValues[i],
+                });
+            }
         });
+    }
+
+    _calculateMiniMapData() {
+        // calcualate axis scale factor
+        let maxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
+        this.miniMap.xAxis.scaleFactor = this.canvas.width / (this.chart.xAxis.originalValues.length - 1);
+        this.miniMap.yAxis.scaleFactor = this.miniMap.height / maxValue;
+
+        // calculate X axis values
         this.miniMap.xAxis.originalValues.forEach((element, index) => {
             this.miniMap.xAxis.values.push(index * this.miniMap.xAxis.scaleFactor);
         });
 
         // calculate Y axis values
-        this.chart.yAxis.columns.forEach((column) => {
-            for (let i = 0; i < column.originalValues.length; i++) {
-                let scaledY = column.originalValues[i] * this.chart.yAxis.scaleFactor * miniMapScaleShift;
-                let y = this.canvas.height - scaledY - this.miniMap.height;
-                column.values.push(y);
-            }
-        });
         this.miniMap.yAxis.columns.forEach((column, index) => {
             for (let i = 0; i < this.chart.yAxis.columns[index].originalValues.length; i++) {
                 let scaledY = this.chart.yAxis.columns[index].originalValues[i] * this.miniMap.yAxis.scaleFactor;
@@ -345,15 +354,44 @@ class ChartBuilder {
     }
 
     // finds Y maximum value. required for calculating scale factor.
-    _findMaxValue() {
+    _findMaxValue(startIndex, endIndex) {
         let maxValue = 0;
-        for (let i = 0; i < this.chart.yAxis.columns.length; i++) {
-            let temp = Math.max.apply(null, this.chart.yAxis.columns[i].originalValues);
+        this.chart.yAxis.columns.forEach((element) => {
+            let temp = Math.max.apply(null, element.originalValues.slice(startIndex, endIndex));
             if (temp > maxValue) {
                 maxValue = temp;
             }
-        }
+        });
         return maxValue;
+    }
+
+    _isOverLeftDragLine() {
+        return (
+            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.leftDragLine.x &&
+            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
+                this.miniMap.frame.leftDragLine.x + this.miniMap.frame.leftDragLine.width &&
+            event.offsetY >= this.miniMap.frame.leftDragLine.y &&
+            event.offsetY <= this.miniMap.frame.leftDragLine.y + this.miniMap.frame.leftDragLine.height
+        );
+    }
+
+    _isOverRightDragLine() {
+        return (
+            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.rightDragLine.x &&
+            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
+                this.miniMap.frame.rightDragLine.x + this.miniMap.frame.rightDragLine.width &&
+            event.offsetY >= this.miniMap.frame.rightDragLine.y &&
+            event.offsetY <= this.miniMap.frame.rightDragLine.y + this.miniMap.frame.rightDragLine.height
+        );
+    }
+
+    _isOverDragFrame() {
+        return (
+            event.offsetX >= this.miniMap.frame.rect.x &&
+            event.offsetX <= this.miniMap.frame.rect.x + this.miniMap.frame.rect.width &&
+            event.offsetY >= this.miniMap.frame.rect.y &&
+            event.offsetY <= this.miniMap.frame.rect.y + this.miniMap.frame.rect.height
+        );
     }
 }
 
