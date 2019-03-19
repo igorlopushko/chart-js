@@ -1,5 +1,6 @@
 import webpack from 'webpack';
 import path from 'path';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 export default {
     mode: 'development',
@@ -20,7 +21,13 @@ export default {
         contentBase: path.join(__dirname, 'src'),
         noInfo: false,
     },
-    plugins: [new webpack.HotModuleReplacementPlugin()],
+    plugins: [
+        new webpack.HotModuleReplacementPlugin(),
+        new HtmlWebpackPlugin({
+            template: 'src/index.html',
+            inject: true,
+        }),
+    ],
     module: {
         rules: [
             {
