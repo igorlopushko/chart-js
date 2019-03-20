@@ -1,6 +1,8 @@
 import chart from './chart';
 import miniMap from './miniMap';
 import * as ActionTypes from './dragActionTypes';
+import DateHelper from './helpers/dateHelper';
+import AxisHelper from './helpers/axisHelper';
 
 class ChartBuilder {
     constructor(canvas, data) {
@@ -15,6 +17,8 @@ class ChartBuilder {
         this.data = data;
         this.chart = chart;
         this.miniMap = miniMap;
+        this.dateHelper = new DateHelper();
+        this.axisHelper = new AxisHelper();
 
         /* internal veriables */
         this.isDragging = false;
@@ -370,7 +374,7 @@ class ChartBuilder {
         this.chart.axis.grid = new Array();
 
         // calculate Y axis labels
-        let yMultiplier = this._getAxisLabelsMultiplier(maxValue, this.chart.axis.yLabels.displayCoef);
+        let yMultiplier = this.axisHelper.getAxisLabelsMultiplier(maxValue, this.chart.axis.yLabels.displayCoef);
         for (let i = 0; i < this.chart.axis.yLabels.displayCoef; i++) {
             let value = Math.round(yMultiplier * i);
             let scaledValue = value * this.chart.yAxis.scaleFactor * miniMapScaleShift;
@@ -386,15 +390,23 @@ class ChartBuilder {
         }
 
         // calculate X axis labels
-        let xRange = this.chart.displayEndIndex - this.chart.displayStartIndex;
-        let xMultiplier = this._getAxisLabelsMultiplier(xRange, this.chart.axis.xLabels.displayCoef);
-        for (let i = 0; i < this.chart.axis.xLabels.displayCoef; i++) {
-            let xIndex = i == 0 ? 0 : Math.round(xMultiplier * i * 0.9);
-            if (xIndex < this.chart.xAxis.values.length) {
-                let xValue = xIndex * this.chart.xAxis.scaleFactor;
-                let originalValue = this.chart.xAxis.values[xIndex].originalValue;
-                let date = this._convertToDate(originalValue);
-                let displayText = this._getMonthShortName(date.getMonth()) + ' ' + date.getDate();
+        let ticks = this.axisHelper.getDateIncrementsForAxis(
+            this.chart.xAxis.originalValues[this.chart.displayStartIndex],
+            this.chart.xAxis.originalValues[this.chart.displayEndIndex],
+            this.chart.axis.xLabels.displayCoef
+        );
+
+        for (let i = 0; i < ticks.length; i++) {
+            let xIndex = this.chart.xAxis.values.findIndex((element, index) => {
+                if (element.originalValue == ticks[i]) {
+                    return true;
+                }
+            });
+            if (xIndex != -1 && xIndex < this.chart.xAxis.values.length) {
+                let xValue = this.chart.xAxis.values[xIndex].scaledValue;
+                let originalValue = ticks[i];
+                let date = this.dateHelper.convertToDate(originalValue);
+                let displayText = this.dateHelper.getMonthShortName(date.getMonth()) + ' ' + date.getDate();
                 this.chart.axis.xLabels.values.push({
                     text: displayText,
                     x: xValue,
@@ -402,43 +414,6 @@ class ChartBuilder {
                 });
             }
         }
-    }
-
-    _getMonthShortName(index) {
-        switch (index) {
-            case 0:
-                return 'Jan';
-            case 1:
-                return 'Feb';
-            case 2:
-                return 'Mar';
-            case 3:
-                return 'Apr';
-            case 4:
-                return 'May';
-            case 5:
-                return 'Jun';
-            case 6:
-                return 'Jul';
-            case 7:
-                return 'Aug';
-            case 8:
-                return 'Sep';
-            case 9:
-                return 'Oct';
-            case 10:
-                return 'Nov';
-            case 11:
-                return 'Dec';
-        }
-    }
-
-    _getAxisLabelsMultiplier(maxValue, tickCount) {
-        let range = maxValue;
-        let unroundedTickSize = range / (tickCount - 1);
-        let x = Math.ceil(Math.log10(unroundedTickSize) - 1);
-        let pow10x = Math.pow(10, x);
-        return Math.ceil(unroundedTickSize / pow10x) * pow10x;
     }
 
     _calculateMiniMapData() {
@@ -460,11 +435,6 @@ class ChartBuilder {
                 column.values.push(y);
             }
         });
-    }
-
-    // converts UNIX timestamp in milliseconds to Date
-    _convertToDate(value) {
-        return new Date(value * 1000);
     }
 
     // finds Y maximum value. required for calculating scale factor.
