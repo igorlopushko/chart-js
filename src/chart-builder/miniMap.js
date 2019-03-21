@@ -18,7 +18,7 @@ export default {
     height: 50,
     width: 0,
     frame: {
-        minDisplayPositions: 10,
+        minDisplayPositions: 20,
         dragLineWidth: 5,
         // is used to reduse issue with targeting exact drag line position
         dragErrorPixelFactor: 5,

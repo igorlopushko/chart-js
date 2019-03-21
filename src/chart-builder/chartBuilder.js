@@ -26,6 +26,9 @@ class ChartBuilder {
         this.draggingObj = '';
         this.clickX = 0;
         this.clickXInfo = 0;
+        this.axisXScaleShift =
+            (this.canvas.width - this.chart.axis.style.axisLeftPadding - this.chart.axis.style.axisRightPadding) /
+            this.canvas.width;
 
         canvas.addEventListener('mousedown', this);
         canvas.addEventListener('mouseup', this);
@@ -256,14 +259,14 @@ class ChartBuilder {
         }
 
         if (this.drawInfo) {
-            let x = this.chart.xAxis.values[infoIndex].scaledValue;
+            let chartX = this.chart.xAxis.values[infoIndex].scaledValue;
 
             // draw info line
             this.canvas.ctx.strokeStyle = this.chart.axis.style.color;
             this.canvas.ctx.beginPath();
-            this.canvas.ctx.moveTo(x, 0);
+            this.canvas.ctx.moveTo(chartX, 20);
             this.canvas.ctx.lineTo(
-                x,
+                chartX,
                 this.canvas.height - this.miniMap.height - this.chart.axis.style.axisBottomPadding
             );
             this.canvas.ctx.stroke();
@@ -273,51 +276,83 @@ class ChartBuilder {
                 let y = element.values[infoIndex].scaledValue;
                 this.canvas.ctx.fillStyle = element.color;
                 this.canvas.ctx.beginPath();
-                this.canvas.ctx.arc(x, y, 5, Math.PI + (Math.PI * 2) / 2, false);
+                this.canvas.ctx.arc(chartX, y, 5, Math.PI + (Math.PI * 2) / 2, false);
                 this.canvas.ctx.fill();
                 this.canvas.ctx.fillStyle = 'rgba(255, 255, 255, 1)';
                 this.canvas.ctx.beginPath();
-                this.canvas.ctx.arc(x, y, 2, Math.PI + (Math.PI * 2) / 2, false);
+                this.canvas.ctx.arc(chartX, y, 2, Math.PI + (Math.PI * 2) / 2, false);
                 this.canvas.ctx.fill();
             });
 
-            // draw info box
-            let infoBoxX = x - 50;
-            let infoBoxY = 0;
-            let infoBoxWidth = 100;
-            let infoBoxHeigth = 100;
-            let infoBoxCornersRadius = 10;
-            this.canvas.ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-            this._drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeigth, infoBoxCornersRadius);
-            this.canvas.ctx.fill();
-            this.canvas.ctx.strokeStyle = this.chart.axis.style.color;
-            this._drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeigth, infoBoxCornersRadius);
-            this.canvas.ctx.stroke();
-
-            // draw header text
             let date = this.dateHelper.convertToDate(this.chart.xAxis.values[infoIndex].originalValue);
-            let headerTextX = x - 40;
-            let headerTextY = infoBoxY + 20;
             let headerText =
                 this.dateHelper.getDayShortName(date.getDay()) +
                 ', ' +
                 this.dateHelper.getMonthShortName(date.getMonth()) +
                 ' ' +
                 date.getDate();
+
+            /*----------- draw info box ----------*/
+            const topPadding = 20;
+            const leftPadding = 15;
+            const rightPadding = 15;
+            const fontMultiplier = 9;
+
+            let valuesLength = 0;
+            this.chart.yAxis.columns.forEach((element) => {
+                valuesLength += element.values[infoIndex].originalValue.toString().length;
+            });
+            let maxContentLegth = valuesLength > headerText.length ? valuesLength : headerText.length;
+
+            let infoBoxWidth = maxContentLegth * fontMultiplier + rightPadding;
+            const infoBoxHeigth = 65;
+            let infoBoxX = 0;
+            if (chartX - infoBoxWidth / 2 + infoBoxWidth >= this.canvas.width) {
+                infoBoxX = this.canvas.width - infoBoxWidth - this.chart.axis.style.axisRightPadding;
+            } else if (chartX - infoBoxWidth / 2 <= 0) {
+                infoBoxX = this.chart.axis.style.axisLeftPadding;
+            } else {
+                infoBoxX = chartX - infoBoxWidth / 2;
+            }
+
+            const infoBoxY = this.chart.axis.style.axisTopPadding;
+            const infoBoxCornersRadius = 10;
+
+            this.canvas.ctx.save();
+            this.canvas.ctx.strokeStyle = this.chart.axis.style.color;
+            this.canvas.ctx.shadowOffsetX = 1;
+            this.canvas.ctx.shadowOffsetY = 1;
+            this.canvas.ctx.shadowBlur = 4;
+            this.canvas.ctx.shadowColor = this.chart.axis.style.color;
+            this._drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeigth, infoBoxCornersRadius);
+            this.canvas.ctx.stroke();
+            this.canvas.ctx.restore();
+
+            this.canvas.ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+            this._drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeigth, infoBoxCornersRadius);
+            this.canvas.ctx.fill();
+
+            // draw header text
+            let headerTextX = infoBoxX + leftPadding;
+            let headerTextY = infoBoxY + topPadding;
+            this.canvas.ctx.font = '12px Helvetica';
             this.canvas.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
             this.canvas.ctx.fillText(headerText, headerTextX, headerTextY);
 
             // draw info text
-            this.chart.yAxis.columns.forEach((element, index) => {
-                let itemX = x - 40;
-                if (index != 0) {
-                    itemX = itemX + index * 50;
-                }
-                let itemY = infoBoxY + 40;
+            let columnShift = 0;
+            const fistLineShift = 40;
+            const secondLineShift = 12;
+            this.chart.yAxis.columns.forEach((element) => {
                 let value = element.values[infoIndex].originalValue;
+                let itemX = infoBoxX + leftPadding + columnShift;
+                columnShift = columnShift + value.toString().length * fontMultiplier;
+                let itemY = infoBoxY + fistLineShift;
                 this.canvas.ctx.fillStyle = element.color;
-                this.canvas.ctx.fillText(element.name, itemX, itemY);
-                this.canvas.ctx.fillText(value, itemX, itemY + 20);
+                this.canvas.ctx.font = ' bold 12px Helvetica';
+                this.canvas.ctx.fillText(value, itemX, itemY);
+                this.canvas.ctx.font = '8px Helvetica';
+                this.canvas.ctx.fillText(element.name, itemX, itemY + secondLineShift);
             });
         }
     }
@@ -372,15 +407,13 @@ class ChartBuilder {
         this.miniMap.frame.leftDragLine.y = miniMapY;
 
         // rigth line
+        let rightLineX =
+            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]) -
+            this.miniMap.frame.dragLineWidth / 2 +
+            1;
         this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(
-            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]) - this.miniMap.frame.dragLineWidth / 2,
-            miniMapY
-        );
-        this.canvas.ctx.lineTo(
-            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]) - this.miniMap.frame.dragLineWidth / 2,
-            miniMapY + this.miniMap.height - this.miniMap.frame.border.width
-        );
+        this.canvas.ctx.moveTo(rightLineX, miniMapY);
+        this.canvas.ctx.lineTo(rightLineX, miniMapY + this.miniMap.height - this.miniMap.frame.border.width);
         this.canvas.ctx.stroke();
         this.miniMap.frame.rightDragLine.x =
             Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]) - this.miniMap.frame.border.width;
@@ -391,7 +424,7 @@ class ChartBuilder {
         this.canvas.ctx.beginPath();
         this.canvas.ctx.moveTo(miniMapX, miniMapY - this.miniMap.frame.border.width / 2);
         this.canvas.ctx.lineTo(
-            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]),
+            Math.round(this.miniMap.xAxis.values[this.chart.displayEndIndex]) + 1,
             miniMapY - this.miniMap.frame.border.width / 2
         );
         this.canvas.ctx.stroke();
@@ -400,7 +433,7 @@ class ChartBuilder {
         this.canvas.ctx.beginPath();
         this.canvas.ctx.moveTo(miniMapX, miniMapY + this.miniMap.height - this.miniMap.frame.border.width / 2);
         this.canvas.ctx.lineTo(
-            this.miniMap.xAxis.values[this.chart.displayEndIndex],
+            this.miniMap.xAxis.values[this.chart.displayEndIndex] + 1,
             miniMapY + this.miniMap.height - this.miniMap.frame.border.width / 2
         );
         this.canvas.ctx.stroke();
@@ -412,22 +445,23 @@ class ChartBuilder {
 
         this.canvas.ctx.fillStyle = this.miniMap.frame.border.fadeColor;
 
-        if (this.miniMap.frame.leftDragLine.x > 0) {
-            this.canvas.ctx.fillRect(
-                0,
-                miniMapY - this.miniMap.frame.border.width / 2 - this.miniMap.frame.border.width / 2,
-                this.miniMap.frame.leftDragLine.x,
-                this.miniMap.height + -this.miniMap.frame.border.width / 2 + this.miniMap.frame.border.width + 1
-            );
+        if (this.miniMap.frame.leftDragLine.x > this.chart.axis.style.axisLeftPadding) {
+            let x = this.chart.axis.style.axisLeftPadding;
+            let y = miniMapY - this.miniMap.frame.border.width / 2 - this.miniMap.frame.border.width / 2;
+            let width = this.miniMap.frame.leftDragLine.x - this.chart.axis.style.axisLeftPadding;
+            let height =
+                this.miniMap.height + -this.miniMap.frame.border.width / 2 + this.miniMap.frame.border.width + 1;
+            this.canvas.ctx.fillRect(x, y, width, height);
         }
 
         if (this.miniMap.frame.rightDragLine.x + this.miniMap.frame.dragLineWidth < this.miniMap.width) {
-            this.canvas.ctx.fillRect(
-                this.miniMap.frame.rightDragLine.x + 2,
-                miniMapY - this.miniMap.frame.border.width / 2 - this.miniMap.frame.border.width / 2,
-                this.miniMap.width - this.miniMap.frame.rightDragLine.x + this.miniMap.frame.dragLineWidth,
-                this.miniMap.height + -this.miniMap.frame.border.width / 2 + this.miniMap.frame.border.width + 1
-            );
+            let x = this.miniMap.frame.rightDragLine.x + 2;
+            let y = miniMapY - this.miniMap.frame.border.width / 2 - this.miniMap.frame.border.width / 2;
+            let width =
+                this.miniMap.width - this.miniMap.frame.rightDragLine.x - this.chart.axis.style.axisLeftPadding - 2;
+            let height =
+                this.miniMap.height + -this.miniMap.frame.border.width / 2 + this.miniMap.frame.border.width + 1;
+            this.canvas.ctx.fillRect(x, y, width, height);
         }
     }
 
@@ -463,14 +497,16 @@ class ChartBuilder {
     }
 
     _calculateChartData() {
-        // calcualate axis scale factor
         let maxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
         //let maxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
 
+        // init data
         this.chart.xAxis.values = new Array();
         this.chart.yAxis.columns.forEach((element) => {
             element.values = new Array();
         });
+
+        // calcualate axis scale factor
         this.chart.xAxis.scaleFactor = this.canvas.width / (this.chart.displayEndIndex - this.chart.displayStartIndex);
         this.chart.yAxis.scaleFactor = this.canvas.height / maxValue;
 
@@ -484,7 +520,8 @@ class ChartBuilder {
         let index = 0;
         for (let i = this.chart.displayStartIndex; i <= this.chart.displayEndIndex; i++) {
             this.chart.xAxis.values.push({
-                scaledValue: index * this.chart.xAxis.scaleFactor,
+                scaledValue:
+                    index * this.chart.xAxis.scaleFactor * this.axisXScaleShift + this.chart.axis.style.axisLeftPadding,
                 originalValue: this.chart.xAxis.originalValues[i],
             });
             index++;
@@ -511,7 +548,7 @@ class ChartBuilder {
         let yMultiplier = this.axisHelper.getAxisLabelsMultiplier(maxValue, this.chart.axis.yLabels.displayCoef);
         for (let i = 0; i < this.chart.axis.yLabels.displayCoef; i++) {
             let value = Math.round(yMultiplier * i);
-            let scaledValue = value * this.chart.yAxis.scaleFactor * miniMapScaleShift;
+            let scaledValue = value * this.chart.yAxis.scaleFactor;
             let yValue =
                 this.canvas.height - scaledValue - this.miniMap.height - this.chart.axis.style.axisBottomPadding;
             if (yValue > this.chart.axis.style.fontSize + 1) {
@@ -520,7 +557,12 @@ class ChartBuilder {
                     x: this.chart.axis.style.textLeftPadding,
                     y: yValue - this.chart.axis.style.textBottomPadding,
                 });
-                this.chart.axis.grid.push({ x1: 0, y1: yValue, x2: this.canvas.width, y2: yValue });
+                this.chart.axis.grid.push({
+                    x1: this.chart.axis.style.axisLeftPadding,
+                    y1: yValue,
+                    x2: this.canvas.width - this.chart.axis.style.axisRightPadding,
+                    y2: yValue,
+                });
             }
         }
 
@@ -531,6 +573,7 @@ class ChartBuilder {
             this.chart.axis.xLabels.displayCoef
         );
 
+        // draw X axis labels
         for (let i = 0; i < ticks.length; i++) {
             let xIndex = this.chart.xAxis.values.findIndex((element, index) => {
                 if (element.originalValue == ticks[i]) {
@@ -538,7 +581,7 @@ class ChartBuilder {
                 }
             });
             if (xIndex != -1 && xIndex < this.chart.xAxis.values.length) {
-                let xValue = this.chart.xAxis.values[xIndex].scaledValue;
+                let xValue = this.chart.xAxis.values[xIndex].scaledValue + this.chart.axis.style.axisLeftPadding;
                 let originalValue = ticks[i];
                 let date = this.dateHelper.convertToDate(originalValue);
                 let displayText = this.dateHelper.getMonthShortName(date.getMonth()) + ' ' + date.getDate();
@@ -563,7 +606,9 @@ class ChartBuilder {
 
         // calculate X axis values
         this.miniMap.xAxis.originalValues.forEach((element, index) => {
-            this.miniMap.xAxis.values.push(index * this.miniMap.xAxis.scaleFactor);
+            this.miniMap.xAxis.values.push(
+                index * this.miniMap.xAxis.scaleFactor * this.axisXScaleShift + this.chart.axis.style.axisLeftPadding
+            );
         });
 
         // calculate Y axis values

@@ -3296,5 +3296,5 @@ let data = [
 let canvas = document.getElementById('canvas');
 
 if (canvas.getContext) {
-    let builder = new ChartBuilder(canvas, data[0]);
+    let builder = new ChartBuilder(canvas, data[1]);
 }
