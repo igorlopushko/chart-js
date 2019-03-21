@@ -395,11 +395,16 @@ class ChartBuilder {
                 let originalValue = this.chart.xAxis.values[xIndex].originalValue;
                 let date = this._convertToDate(originalValue);
                 let displayText = this._getMonthShortName(date.getMonth()) + ' ' + date.getDate();
-                this.chart.axis.xLabels.values.push({
-                    text: displayText,
-                    x: xValue,
-                    y: this.canvas.height - this.miniMap.height - axisBottomPadding + this.chart.axis.style.fontSize,
-                });
+                if (xValue < this.canvas.width - 40)
+                    this.chart.axis.xLabels.values.push({
+                        text: displayText,
+                        x: xValue,
+                        y:
+                            this.canvas.height -
+                            this.miniMap.height -
+                            axisBottomPadding +
+                            this.chart.axis.style.fontSize,
+                    });
             }
         }
     }

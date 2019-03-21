@@ -1,7 +1,7 @@
 export default {
     axis: {
         grid: [{ x1: 0, y1: 0, x2: 0, y2: 0 }],
-        xLabels: { displayCoef: 5, values: [{ text: '', x: 0, y: 0 }] },
+        xLabels: { displayCoef: 8, values: [{ text: '', x: 0, y: 0 }] },
         yLabels: { displayCoef: 6, values: [{ text: '', x: 0, y: 0 }] },
         style: {
             fontSize: 12,
