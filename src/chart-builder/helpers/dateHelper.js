@@ -28,6 +28,25 @@ class DateHelper {
         }
     }
 
+    getDayShortName(index) {
+        switch (index) {
+            case 0:
+                return 'Mon';
+            case 1:
+                return 'Tue';
+            case 2:
+                return 'Wed';
+            case 3:
+                return 'Thu';
+            case 4:
+                return 'Fri';
+            case 5:
+                return 'Sat';
+            case 6:
+                return 'Sun';
+        }
+    }
+
     // converts UNIX timestamp in milliseconds to Date
     convertToDate(value) {
         return new Date(value);

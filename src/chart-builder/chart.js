@@ -8,6 +8,10 @@ export default {
             fonyStyle: 'arial',
             fonyColor: 'rgba(150, 162, 170, 1)',
             color: 'rgba(242, 244, 245, 1)',
+            textLeftPadding: 1,
+            textBottomPadding: 5,
+            axisTopPadding: 3,
+            axisBottomPadding: 20,
         },
     },
     yAxis: {
