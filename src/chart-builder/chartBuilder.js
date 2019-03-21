@@ -1,6 +1,8 @@
 import chart from './chart';
 import miniMap from './miniMap';
 import * as ActionTypes from './dragActionTypes';
+import DateHelper from './helpers/dateHelper';
+import AxisHelper from './helpers/axisHelper';
 
 class ChartBuilder {
     constructor(canvas, data) {
@@ -15,11 +17,15 @@ class ChartBuilder {
         this.data = data;
         this.chart = chart;
         this.miniMap = miniMap;
+        this.dateHelper = new DateHelper();
+        this.axisHelper = new AxisHelper();
 
         /* internal veriables */
         this.isDragging = false;
+        this.drawInfo = false;
         this.draggingObj = '';
         this.clickX = 0;
+        this.clickXInfo = 0;
 
         canvas.addEventListener('mousedown', this);
         canvas.addEventListener('mouseup', this);
@@ -31,6 +37,7 @@ class ChartBuilder {
         this._calculateChartData();
         this._calculateMiniMapData();
         this._drawChartData();
+        this._drawChartInfo();
         this._drawMiniMapData();
         this._drawMiniMapFrame();
     }
@@ -56,17 +63,24 @@ class ChartBuilder {
     _handleMouseDown(event) {
         if (this._isOverLeftDragLine()) {
             this.isDragging = true;
+            this.drawInfo = false;
             this.draggingObj = ActionTypes.DRAG_LEFT_LINE;
             this.canvas.ref.style.cursor = 'col-resize';
         } else if (this._isOverRightDragLine()) {
             this.isDragging = true;
+            this.drawInfo = false;
             this.draggingObj = ActionTypes.DRAG_RIGHT_LINE;
             this.canvas.ref.style.cursor = 'col-resize';
         } else if (this._isOverDragFrame()) {
             this.isDragging = true;
+            this.drawInfo = false;
             this.draggingObj = ActionTypes.DRAG_FRAME;
             this.canvas.ref.style.cursor = 'move';
             this.clickX = event.offsetX;
+        } else if (this._isOverChart()) {
+            this.clickXInfo = event.offsetX;
+            this.drawInfo = true;
+            this._updateChart();
         }
     }
 
@@ -81,6 +95,8 @@ class ChartBuilder {
             this.canvas.ref.style.cursor = 'col-resize';
         } else if (this._isOverDragFrame()) {
             this.canvas.ref.style.cursor = 'move';
+        } else if (this._isOverChart()) {
+            this.canvas.ref.style.cursor = 'pointer';
         } else {
             this.canvas.ref.style.cursor = 'default';
         }
@@ -135,6 +151,7 @@ class ChartBuilder {
         this._clearCanvas();
         this._calculateChartData();
         this._drawChartData();
+        this._drawChartInfo();
         this._drawMiniMapData();
         this._drawMiniMapFrame();
     }
@@ -145,9 +162,15 @@ class ChartBuilder {
     }
 
     _init() {
+        this.chart.xAxis.values = [];
+        this.chart.xAxis.originalValues = [];
+        this.chart.yAxis.columns = [];
         this.chart.displayStartIndex = 0;
         // -1 because of array indexation, and -1 because first element is not a value = -2
         this.chart.displayEndIndex = this.data.columns[0].length - 2;
+
+        this.miniMap.yAxis.columns = [];
+        this.miniMap.xAxis.values = [];
         this.miniMap.x = 0;
         this.miniMap.y = this.canvas.height - this.miniMap.height;
         this.miniMap.width = this.canvas.width;
@@ -171,14 +194,14 @@ class ChartBuilder {
             this.canvas.ctx.stroke();
         });
 
-        // draw Y labels
+        // draw X labels
         this.canvas.ctx.fillStyle = this.chart.axis.style.fonyColor;
-        this.chart.axis.yLabels.values.forEach((element) => {
+        this.chart.axis.xLabels.values.forEach((element) => {
             this.canvas.ctx.fillText(element.text, element.x, element.y);
         });
         // draw Y labels
         this.canvas.ctx.fillStyle = this.chart.axis.style.fonyColor;
-        this.chart.axis.xLabels.values.forEach((element) => {
+        this.chart.axis.yLabels.values.forEach((element) => {
             this.canvas.ctx.fillText(element.text, element.x, element.y);
         });
 
@@ -193,6 +216,123 @@ class ChartBuilder {
 
             this.canvas.ctx.stroke();
         });
+    }
+
+    _drawChartInfo() {
+        // get clicked index
+        let infoIndex = -1;
+        if (this.drawInfo) {
+            for (let i = 0; i < this.chart.xAxis.values.length; i++) {
+                if (i == 0) {
+                    if (
+                        this.clickXInfo >= 0 &&
+                        this.clickXInfo <
+                            (this.chart.xAxis.values[i].scaledValue + this.chart.xAxis.values[i + 1].scaledValue) / 2
+                    ) {
+                        infoIndex = i;
+                        break;
+                    }
+                } else if (i == this.chart.xAxis.values.length - 1) {
+                    if (
+                        this.clickXInfo >=
+                            (this.chart.xAxis.values[i - 1].scaledValue + this.chart.xAxis.values[i].scaledValue) / 2 &&
+                        this.clickXInfo <= this.canvas.width
+                    ) {
+                        infoIndex = i;
+                        break;
+                    }
+                } else {
+                    if (
+                        this.clickXInfo >=
+                            (this.chart.xAxis.values[i - 1].scaledValue + this.chart.xAxis.values[i].scaledValue) / 2 &&
+                        this.clickXInfo <
+                            (this.chart.xAxis.values[i].scaledValue + this.chart.xAxis.values[i + 1].scaledValue) / 2
+                    ) {
+                        infoIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (this.drawInfo) {
+            let x = this.chart.xAxis.values[infoIndex].scaledValue;
+
+            // draw info line
+            this.canvas.ctx.strokeStyle = this.chart.axis.style.color;
+            this.canvas.ctx.beginPath();
+            this.canvas.ctx.moveTo(x, 0);
+            this.canvas.ctx.lineTo(
+                x,
+                this.canvas.height - this.miniMap.height - this.chart.axis.style.axisBottomPadding
+            );
+            this.canvas.ctx.stroke();
+
+            // draw info circles
+            this.chart.yAxis.columns.forEach((element) => {
+                let y = element.values[infoIndex].scaledValue;
+                this.canvas.ctx.fillStyle = element.color;
+                this.canvas.ctx.beginPath();
+                this.canvas.ctx.arc(x, y, 5, Math.PI + (Math.PI * 2) / 2, false);
+                this.canvas.ctx.fill();
+                this.canvas.ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                this.canvas.ctx.beginPath();
+                this.canvas.ctx.arc(x, y, 2, Math.PI + (Math.PI * 2) / 2, false);
+                this.canvas.ctx.fill();
+            });
+
+            // draw info box
+            let infoBoxX = x - 50;
+            let infoBoxY = 0;
+            let infoBoxWidth = 100;
+            let infoBoxHeigth = 100;
+            let infoBoxCornersRadius = 10;
+            this.canvas.ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+            this._drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeigth, infoBoxCornersRadius);
+            this.canvas.ctx.fill();
+            this.canvas.ctx.strokeStyle = this.chart.axis.style.color;
+            this._drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeigth, infoBoxCornersRadius);
+            this.canvas.ctx.stroke();
+
+            // draw header text
+            let date = this.dateHelper.convertToDate(this.chart.xAxis.values[infoIndex].originalValue);
+            let headerTextX = x - 40;
+            let headerTextY = infoBoxY + 20;
+            let headerText =
+                this.dateHelper.getDayShortName(date.getDay()) +
+                ', ' +
+                this.dateHelper.getMonthShortName(date.getMonth()) +
+                ' ' +
+                date.getDate();
+            this.canvas.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+            this.canvas.ctx.fillText(headerText, headerTextX, headerTextY);
+
+            // draw info text
+            this.chart.yAxis.columns.forEach((element, index) => {
+                let itemX = x - 40;
+                if (index != 0) {
+                    itemX = itemX + index * 50;
+                }
+                let itemY = infoBoxY + 40;
+                let value = element.values[infoIndex].originalValue;
+                this.canvas.ctx.fillStyle = element.color;
+                this.canvas.ctx.fillText(element.name, itemX, itemY);
+                this.canvas.ctx.fillText(value, itemX, itemY + 20);
+            });
+        }
+    }
+
+    _drawRoundedRect(x, y, width, height, radius) {
+        this.canvas.ctx.beginPath();
+        this.canvas.ctx.moveTo(x, y + radius);
+        this.canvas.ctx.lineTo(x, y + height - radius);
+        this.canvas.ctx.arcTo(x, y + height, x + radius, y + height, radius);
+        this.canvas.ctx.lineTo(x + width - radius, y + height);
+        this.canvas.ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+        this.canvas.ctx.lineTo(x + width, y + radius);
+        this.canvas.ctx.arcTo(x + width, y, x + width - radius, y, radius);
+        this.canvas.ctx.lineTo(x + radius, y);
+        this.canvas.ctx.arcTo(x, y, x, y + radius, radius);
     }
 
     _drawMiniMapData() {
@@ -311,21 +451,18 @@ class ChartBuilder {
                 name: column[0],
                 originalValues: column.slice(sliceStartIndex, sliceEndIndex),
                 values: new Array(),
+                color: this.data.colors[column[0]],
             });
             this.miniMap.yAxis.columns.push({
                 name: column[0],
                 originalValues: column.slice(sliceStartIndex, sliceEndIndex),
                 values: new Array(),
+                color: this.data.colors[column[0]],
             });
         });
     }
 
     _calculateChartData() {
-        const textLeftPadding = 1;
-        const textBottomPadding = 5;
-        const axisTopPadding = 3;
-        const axisBottomPadding = 20;
-
         // calcualate axis scale factor
         let maxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
         //let maxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
@@ -340,7 +477,8 @@ class ChartBuilder {
         // get minimap scale factor to multiply Y values
         // shifts all values up to free space for minimap
         let miniMapScaleShift =
-            (this.canvas.height - this.miniMap.height - axisBottomPadding) / (this.canvas.height + axisTopPadding);
+            (this.canvas.height - this.miniMap.height - this.chart.axis.style.axisBottomPadding) /
+            (this.canvas.height + this.chart.axis.style.axisTopPadding);
 
         // calculate X axis values
         let index = 0;
@@ -356,7 +494,7 @@ class ChartBuilder {
         this.chart.yAxis.columns.forEach((column) => {
             for (let i = this.chart.displayStartIndex; i <= this.chart.displayEndIndex; i++) {
                 let scaledY = column.originalValues[i] * this.chart.yAxis.scaleFactor * miniMapScaleShift;
-                let y = this.canvas.height - scaledY - this.miniMap.height - axisBottomPadding;
+                let y = this.canvas.height - scaledY - this.miniMap.height - this.chart.axis.style.axisBottomPadding;
                 column.values.push({
                     scaledValue: y,
                     originalValue: column.originalValues[i],
@@ -370,80 +508,51 @@ class ChartBuilder {
         this.chart.axis.grid = new Array();
 
         // calculate Y axis labels
-        let yMultiplier = this._getAxisLabelsMultiplier(maxValue, this.chart.axis.yLabels.displayCoef);
+        let yMultiplier = this.axisHelper.getAxisLabelsMultiplier(maxValue, this.chart.axis.yLabels.displayCoef);
         for (let i = 0; i < this.chart.axis.yLabels.displayCoef; i++) {
             let value = Math.round(yMultiplier * i);
             let scaledValue = value * this.chart.yAxis.scaleFactor * miniMapScaleShift;
-            let yValue = this.canvas.height - scaledValue - this.miniMap.height - axisBottomPadding;
+            let yValue =
+                this.canvas.height - scaledValue - this.miniMap.height - this.chart.axis.style.axisBottomPadding;
             if (yValue > this.chart.axis.style.fontSize + 1) {
                 this.chart.axis.yLabels.values.push({
                     text: value,
-                    x: textLeftPadding,
-                    y: yValue - textBottomPadding,
+                    x: this.chart.axis.style.textLeftPadding,
+                    y: yValue - this.chart.axis.style.textBottomPadding,
                 });
                 this.chart.axis.grid.push({ x1: 0, y1: yValue, x2: this.canvas.width, y2: yValue });
             }
         }
 
         // calculate X axis labels
-        let xRange = this.chart.displayEndIndex - this.chart.displayStartIndex;
-        let xMultiplier = this._getAxisLabelsMultiplier(xRange, this.chart.axis.xLabels.displayCoef);
-        for (let i = 0; i < this.chart.axis.xLabels.displayCoef; i++) {
-            let xIndex = i == 0 ? 0 : Math.round(xMultiplier * i * 0.9);
-            if (xIndex < this.chart.xAxis.values.length) {
-                let xValue = xIndex * this.chart.xAxis.scaleFactor;
-                let originalValue = this.chart.xAxis.values[xIndex].originalValue;
-                let date = this._convertToDate(originalValue);
-                let displayText = this._getMonthShortName(date.getMonth()) + ' ' + date.getDate();
-                if (xValue < this.canvas.width - 40)
-                    this.chart.axis.xLabels.values.push({
-                        text: displayText,
-                        x: xValue,
-                        y:
-                            this.canvas.height -
-                            this.miniMap.height -
-                            axisBottomPadding +
-                            this.chart.axis.style.fontSize,
-                    });
+        let ticks = this.axisHelper.getDateIncrementsForAxis(
+            this.chart.xAxis.originalValues[this.chart.displayStartIndex],
+            this.chart.xAxis.originalValues[this.chart.displayEndIndex],
+            this.chart.axis.xLabels.displayCoef
+        );
+
+        for (let i = 0; i < ticks.length; i++) {
+            let xIndex = this.chart.xAxis.values.findIndex((element, index) => {
+                if (element.originalValue == ticks[i]) {
+                    return true;
+                }
+            });
+            if (xIndex != -1 && xIndex < this.chart.xAxis.values.length) {
+                let xValue = this.chart.xAxis.values[xIndex].scaledValue;
+                let originalValue = ticks[i];
+                let date = this.dateHelper.convertToDate(originalValue);
+                let displayText = this.dateHelper.getMonthShortName(date.getMonth()) + ' ' + date.getDate();
+                this.chart.axis.xLabels.values.push({
+                    text: displayText,
+                    x: xValue,
+                    y:
+                        this.canvas.height -
+                        this.miniMap.height -
+                        this.chart.axis.style.axisBottomPadding +
+                        this.chart.axis.style.fontSize,
+                });
             }
         }
-    }
-
-    _getMonthShortName(index) {
-        switch (index) {
-            case 0:
-                return 'Jan';
-            case 1:
-                return 'Feb';
-            case 2:
-                return 'Mar';
-            case 3:
-                return 'Apr';
-            case 4:
-                return 'May';
-            case 5:
-                return 'Jun';
-            case 6:
-                return 'Jul';
-            case 7:
-                return 'Aug';
-            case 8:
-                return 'Sep';
-            case 9:
-                return 'Oct';
-            case 10:
-                return 'Nov';
-            case 11:
-                return 'Dec';
-        }
-    }
-
-    _getAxisLabelsMultiplier(maxValue, tickCount) {
-        let range = maxValue;
-        let unroundedTickSize = range / (tickCount - 1);
-        let x = Math.ceil(Math.log10(unroundedTickSize) - 1);
-        let pow10x = Math.pow(10, x);
-        return Math.ceil(unroundedTickSize / pow10x) * pow10x;
     }
 
     _calculateMiniMapData() {
@@ -465,11 +574,6 @@ class ChartBuilder {
                 column.values.push(y);
             }
         });
-    }
-
-    // converts UNIX timestamp in milliseconds to Date
-    _convertToDate(value) {
-        return new Date(value * 1000);
     }
 
     // finds Y maximum value. required for calculating scale factor.
@@ -510,6 +614,15 @@ class ChartBuilder {
             event.offsetX <= this.miniMap.frame.rect.x + this.miniMap.frame.rect.width &&
             event.offsetY >= this.miniMap.frame.rect.y &&
             event.offsetY <= this.miniMap.frame.rect.y + this.miniMap.frame.rect.height
+        );
+    }
+
+    _isOverChart() {
+        return (
+            event.offsetX >= 0 &&
+            event.offsetX <= this.canvas.width &&
+            event.offsetY >= this.chart.axis.style.axisTopPadding &&
+            event.offsetY <= this.canvas.height - this.miniMap.height - this.chart.axis.style.axisBottomPadding
         );
     }
 }
