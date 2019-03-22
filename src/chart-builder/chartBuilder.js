@@ -26,6 +26,7 @@ class ChartBuilder {
         this.actionType = ActionTypes.EMPTY;
         this.clickX = 0;
         this.clickXInfo = 0;
+        this.isNightMode = false;
 
         canvas.addEventListener('mousedown', this);
         canvas.addEventListener('mouseup', this);
@@ -169,6 +170,15 @@ class ChartBuilder {
         }
     }
 
+    swithcMode() {
+        if (this.isNightMode == true) {
+            this.isNightMode = false;
+        } else {
+            this.isNightMode = true;
+        }
+        this._updateChart();
+    }
+
     _handleMouseDown(x, y) {
         if (this._isOverLeftDragLine(x, y)) {
             this.isDragging = true;
@@ -288,6 +298,12 @@ class ChartBuilder {
 
     _clearCanvas() {
         this.canvas.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if (this.isNightMode == true) {
+            this.canvas.ctx.save();
+            this.canvas.ctx.fillStyle = this.canvas.style.darkModeColor;
+            this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.canvas.ctx.restore();
+        }
     }
 
     _drawChartData() {
@@ -386,7 +402,8 @@ class ChartBuilder {
                 this.canvas.ctx.beginPath();
                 this.canvas.ctx.arc(chartX, y, 5, Math.PI + (Math.PI * 2) / 2, false);
                 this.canvas.ctx.fill();
-                this.canvas.ctx.fillStyle = this.canvas.style.ligthModeColor;
+                this.canvas.ctx.fillStyle =
+                    this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
                 this.canvas.ctx.beginPath();
                 this.canvas.ctx.arc(chartX, y, 2, Math.PI + (Math.PI * 2) / 2, false);
                 this.canvas.ctx.fill();
@@ -421,16 +438,21 @@ class ChartBuilder {
             const infoBoxCornersRadius = 10;
 
             this.canvas.ctx.save();
-            this.canvas.ctx.strokeStyle = this.chart.axis.style.color;
+            this.canvas.ctx.strokeStyle =
+                this.isNightMode == true ? 'rgba(30, 40, 62, 1)' : this.chart.axis.style.color;
             this.canvas.ctx.shadowOffsetX = 1;
             this.canvas.ctx.shadowOffsetY = 1;
             this.canvas.ctx.shadowBlur = 4;
-            this.canvas.ctx.shadowColor = this.chart.axis.style.color;
+            this.canvas.ctx.shadowColor =
+                this.isNightMode == true
+                    ? this.chart.info.style.borderColorDarkMode
+                    : this.chart.info.style.borderColorLightMode;
             this.canvas.drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, this.chart.info.height, infoBoxCornersRadius);
             this.canvas.ctx.stroke();
             this.canvas.ctx.restore();
 
-            this.canvas.ctx.fillStyle = this.canvas.style.ligthModeColor;
+            this.canvas.ctx.fillStyle =
+                this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
             this.canvas.drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, this.chart.info.height, infoBoxCornersRadius);
             this.canvas.ctx.fill();
 
@@ -438,7 +460,10 @@ class ChartBuilder {
             let headerTextX = infoBoxX + this.chart.info.style.leftPadding;
             let headerTextY = infoBoxY + this.chart.info.style.topPadding;
             this.canvas.ctx.font = this.chart.info.headerStyle.fontSize + ' ' + this.chart.style.fontFamily;
-            this.canvas.ctx.fillStyle = this.chart.info.headerStyle.fontColor;
+            this.canvas.ctx.fillStyle =
+                this.isNightMode == true
+                    ? this.chart.info.headerStyle.fontColorDarkMode
+                    : this.chart.info.headerStyle.fontColorLightMode;
             this.canvas.ctx.fillText(headerText, headerTextX, headerTextY);
 
             // draw info lines

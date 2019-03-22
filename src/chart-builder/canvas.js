@@ -9,7 +9,7 @@ class Canvas {
             leftPadding: 7,
             rightPadding: 7,
             ligthModeColor: 'rgba(255, 255, 255, 1)',
-            darkModeColor: 'rgba(0, 0, 0, 1)',
+            darkModeColor: 'rgba(36, 47, 62, 1)',
         };
 
         this.xScaleShift = (this.width - this.style.leftPadding - this.style.rightPadding) / this.width;

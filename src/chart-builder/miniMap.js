@@ -23,7 +23,7 @@ export default {
         // is used to reduse issue with targeting exact drag line position
         dragErrorPixelFactor: 10,
         border: {
-            color: 'rgba(150, 162, 170, 0.6)',
+            color: 'rgba(150, 162, 170, 0.5)',
             fadeColor: 'rgba(150, 162, 170, 0.2)',
             width: 2,
         },
