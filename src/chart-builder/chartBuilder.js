@@ -32,6 +32,11 @@ class ChartBuilder {
         canvas.addEventListener('mousemove', this);
         canvas.addEventListener('mouseout', this);
 
+        canvas.addEventListener('touchstart', this);
+        canvas.addEventListener('touchend', this);
+        canvas.addEventListener('touchcancel', this);
+        canvas.addEventListener('touchmove', this);
+
         this._init();
         this._parseData();
         this._calculateChartData();
@@ -46,18 +51,83 @@ class ChartBuilder {
         event.stopPropagation();
         switch (event.type) {
             case 'mousedown':
-                this._handleMouseDown(event);
+                this._handleMouseDown(event.offsetX, event.offsetY);
                 break;
             case 'mouseup':
                 this._handleMouseUp(event);
                 break;
             case 'mousemove':
-                this._handleMouseMove(event);
+                this._handleMouseMove(event.offsetX, event.offsetY);
                 break;
             case 'mouseout':
                 this._handleMouseOut(event);
                 break;
+            case 'touchstart':
+            case 'touchmove':
+                this.isTouch = true;
+                this._handleTouch(event);
+                break;
+            case 'touchend':
+            case 'touchcancel':
+                this.isTouch = false;
+                break;
         }
+    }
+
+    _handleTouch(event) {
+        event.preventDefault();
+        if (event.touches.length > 1 || (event.type == 'touchend' && event.touches.length > 0)) {
+            return;
+        }
+
+        let touch = null;
+
+        switch (event.type) {
+            case 'touchstart':
+                touch = event.touches[0];
+                this._handleMouseDown(
+                    touch.pageX - this._getOffsetLeft(this.canvas.ref),
+                    touch.pageY - this._getOffsetTop(this.canvas.ref)
+                );
+                break;
+            case 'touchmove':
+                touch = event.touches[0];
+                this._handleDragging(touch.pageX - this._getOffsetLeft(this.canvas.ref));
+                break;
+            case 'touchend':
+                this._handleMouseUp(event);
+                break;
+        }
+    }
+
+    _getOffsetLeft(elem) {
+        let offsetLeft = 0;
+        do {
+            if (!isNaN(elem.offsetLeft)) {
+                offsetLeft += elem.offsetLeft;
+            }
+            if (elem.offsetParent !== undefined && elem.offsetParent !== null) {
+                elem = elem.offsetParent;
+            } else {
+                elem = null;
+            }
+        } while (elem !== null);
+        return offsetLeft;
+    }
+
+    _getOffsetTop(elem) {
+        let offsetTop = 0;
+        do {
+            if (!isNaN(elem.offsetTop)) {
+                offsetTop += elem.offsetTop;
+            }
+            if (elem.offsetParent !== undefined && elem.offsetParent !== null) {
+                elem = elem.offsetParent;
+            } else {
+                elem = null;
+            }
+        } while (elem !== null);
+        return offsetTop;
     }
 
     hideColumn(columnId) {
@@ -99,25 +169,25 @@ class ChartBuilder {
         }
     }
 
-    _handleMouseDown(event) {
-        if (this._isOverLeftDragLine()) {
+    _handleMouseDown(x, y) {
+        if (this._isOverLeftDragLine(x, y)) {
             this.isDragging = true;
             this.drawInfo = false;
             this.actionType = ActionTypes.DRAG_LEFT_LINE;
             this.canvas.ref.style.cursor = 'col-resize';
-        } else if (this._isOverRightDragLine()) {
+        } else if (this._isOverRightDragLine(x, y)) {
             this.isDragging = true;
             this.drawInfo = false;
             this.actionType = ActionTypes.DRAG_RIGHT_LINE;
             this.canvas.ref.style.cursor = 'col-resize';
-        } else if (this._isOverDragFrame()) {
+        } else if (this._isOverDragFrame(x, y)) {
             this.isDragging = true;
             this.drawInfo = false;
             this.actionType = ActionTypes.DRAG_FRAME;
             this.canvas.ref.style.cursor = 'move';
-            this.clickX = event.offsetX;
-        } else if (this._isOverChart()) {
-            this.clickXInfo = event.offsetX;
+            this.clickX = x;
+        } else if (this._isOverChart(x, y)) {
+            this.clickXInfo = x;
             this.drawInfo = true;
             this._updateChart();
         }
@@ -129,24 +199,11 @@ class ChartBuilder {
         this.canvas.ref.style.cursor = 'default';
     }
 
-    _handleMouseMove(event) {
-        if (this._isOverLeftDragLine() || this._isOverRightDragLine()) {
-            this.canvas.ref.style.cursor = 'col-resize';
-        } else if (this._isOverDragFrame()) {
-            this.canvas.ref.style.cursor = 'move';
-        } else if (this._isOverChart()) {
-            this.canvas.ref.style.cursor = 'pointer';
-        } else {
-            this.canvas.ref.style.cursor = 'default';
-        }
-
+    _handleDragging(x) {
         if (this.isDragging == true && this.actionType == ActionTypes.DRAG_LEFT_LINE) {
             // drag left line
             for (let i = 0; i < this.chart.displayEndIndex - this.miniMap.frame.minDisplayPositions - 2; i++) {
-                if (
-                    event.offsetX >= this.miniMap.xAxis.values[i] &&
-                    event.offsetX <= this.miniMap.xAxis.values[i + 1]
-                ) {
+                if (x >= this.miniMap.xAxis.values[i] && x <= this.miniMap.xAxis.values[i + 1]) {
                     this.chart.displayStartIndex = i;
                     this._updateChart();
                     break;
@@ -154,36 +211,50 @@ class ChartBuilder {
             }
         } else if (this.isDragging == true && this.actionType == ActionTypes.DRAG_FRAME) {
             // drag frame
-            if (this.clickX > event.offsetX) {
+            if (this.clickX > x) {
                 if (this.chart.displayStartIndex > 0) {
                     this.chart.displayStartIndex -= 1;
                     this.chart.displayEndIndex -= 1;
                 }
-            } else if (this.clickX < event.offsetX) {
+            } else if (this.clickX < x) {
                 if (this.chart.displayEndIndex < this.miniMap.xAxis.values.length - 1) {
                     this.chart.displayStartIndex += 1;
                     this.chart.displayEndIndex += 1;
                 }
             }
             this._updateChart();
-            this.clickX = event.offsetX;
+            this.clickX = x;
         } else if (this.isDragging == true && this.actionType == ActionTypes.DRAG_RIGHT_LINE) {
-            // drag right frame
+            // drag right line
             for (
                 let i = this.miniMap.xAxis.values.length - 1;
                 i > this.chart.displayStartIndex + this.miniMap.frame.minDisplayPositions;
                 i--
             ) {
-                if (
-                    event.offsetX <= this.miniMap.xAxis.values[i] &&
-                    event.offsetX >= this.miniMap.xAxis.values[i - 1]
-                ) {
+                if (x <= this.miniMap.xAxis.values[i] && x >= this.miniMap.xAxis.values[i - 1]) {
                     this.chart.displayEndIndex = i;
                     this._updateChart();
                     break;
                 }
             }
         }
+    }
+
+    _handleMouseMove(x, y) {
+        if (this.isTouch == true) {
+            return;
+        }
+        if (this._isOverLeftDragLine(x, y) || this._isOverRightDragLine(x, y)) {
+            this.canvas.ref.style.cursor = 'col-resize';
+        } else if (this._isOverDragFrame(x, y)) {
+            this.canvas.ref.style.cursor = 'move';
+        } else if (this._isOverChart(x, y)) {
+            this.canvas.ref.style.cursor = 'pointer';
+        } else {
+            this.canvas.ref.style.cursor = 'default';
+        }
+
+        this._handleDragging(event.offsetX);
     }
 
     _updateChart() {
@@ -660,42 +731,47 @@ class ChartBuilder {
         return maxValue;
     }
 
-    _isOverLeftDragLine() {
+    _isOverLeftDragLine(x, y) {
         return (
-            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.leftDragLine.x &&
-            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
+            x + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.leftDragLine.x &&
+            x - this.miniMap.frame.dragErrorPixelFactor <=
                 this.miniMap.frame.leftDragLine.x + this.miniMap.frame.leftDragLine.width &&
-            event.offsetY >= this.miniMap.frame.leftDragLine.y &&
-            event.offsetY <= this.miniMap.frame.leftDragLine.y + this.miniMap.frame.leftDragLine.height
+            y >= this.miniMap.frame.leftDragLine.y &&
+            y <= this.miniMap.frame.leftDragLine.y + this.miniMap.frame.leftDragLine.height
         );
     }
 
-    _isOverRightDragLine() {
+    _isOverRightDragLine(x, y) {
         return (
-            event.offsetX + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.rightDragLine.x &&
-            event.offsetX - this.miniMap.frame.dragErrorPixelFactor <=
+            x + this.miniMap.frame.dragErrorPixelFactor >= this.miniMap.frame.rightDragLine.x &&
+            x - this.miniMap.frame.dragErrorPixelFactor <=
                 this.miniMap.frame.rightDragLine.x + this.miniMap.frame.rightDragLine.width &&
-            event.offsetY >= this.miniMap.frame.rightDragLine.y &&
-            event.offsetY <= this.miniMap.frame.rightDragLine.y + this.miniMap.frame.rightDragLine.height
+            y >= this.miniMap.frame.rightDragLine.y &&
+            y <= this.miniMap.frame.rightDragLine.y + this.miniMap.frame.rightDragLine.height
         );
     }
 
-    _isOverDragFrame() {
+    _isOverDragFrame(x, y) {
         return (
-            event.offsetX >= this.miniMap.frame.x &&
-            event.offsetX <= this.miniMap.frame.x + this.miniMap.frame.width &&
-            event.offsetY >= this.miniMap.frame.y &&
-            event.offsetY <= this.miniMap.frame.y + this.miniMap.frame.height
+            x >= this.miniMap.frame.x &&
+            x <= this.miniMap.frame.x + this.miniMap.frame.width &&
+            y >= this.miniMap.frame.y &&
+            y <= this.miniMap.frame.y + this.miniMap.frame.height
         );
     }
 
-    _isOverChart() {
+    _isOverChart(x, y) {
         return (
-            event.offsetX >= 0 &&
-            event.offsetX <= this.canvas.width &&
-            event.offsetY >= this.chart.axis.style.topPadding &&
-            event.offsetY <= this.canvas.height - this.miniMap.height - this.chart.axis.style.bottomPadding
+            x >= 0 &&
+            x <= this.canvas.width &&
+            y >= this.chart.axis.style.topPadding &&
+            y <= this.canvas.height - this.miniMap.height - this.chart.axis.style.bottomPadding
         );
+    }
+
+    _writeLog(msg) {
+        let logElement = document.getElementById('log');
+        logElement.innerHTML = logElement.innerHTML + '<br />' + msg;
     }
 }
 

@@ -19,9 +19,9 @@ export default {
     width: 0,
     frame: {
         minDisplayPositions: 20,
-        dragLineWidth: 5,
+        dragLineWidth: 8,
         // is used to reduse issue with targeting exact drag line position
-        dragErrorPixelFactor: 5,
+        dragErrorPixelFactor: 10,
         border: {
             color: 'rgba(150, 162, 170, 0.6)',
             fadeColor: 'rgba(150, 162, 170, 0.2)',
