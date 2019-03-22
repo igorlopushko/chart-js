@@ -21,6 +21,7 @@ export default {
                 values: [{ scaledValue: 0, originalValue: 0 }],
                 originalValues: [],
                 name: '',
+                id: '',
                 color: '',
             },
         ],
@@ -56,7 +57,7 @@ export default {
             fontWeight: 'bold',
         },
         namesStyle: {
-            fontSize: '8px',
+            fontSize: '10px',
         },
     },
 };

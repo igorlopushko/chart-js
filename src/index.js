@@ -3296,5 +3296,17 @@ let data = [
 let canvas = document.getElementById('canvas');
 
 if (canvas.getContext) {
-    let builder = new ChartBuilder(canvas, data[1]);
+    let builder = new ChartBuilder(canvas, data[0]);
+    document.getElementById('hidey0').onclick = function() {
+        builder.hideColumn('y0');
+    };
+    document.getElementById('hidey1').onclick = function() {
+        builder.hideColumn('y1');
+    };
+    document.getElementById('showy0').onclick = function() {
+        builder.showColumn('y0');
+    };
+    document.getElementById('showy1').onclick = function() {
+        builder.showColumn('y1');
+    };
 }

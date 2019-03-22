@@ -3,7 +3,7 @@ export default {
         columns: [
             {
                 values: [],
-                name: '',
+                id: '',
                 color: '',
             },
         ],

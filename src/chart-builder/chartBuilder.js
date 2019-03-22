@@ -14,6 +14,12 @@ class ChartBuilder {
         this.dateHelper = new DateHelper();
         this.axisHelper = new AxisHelper();
 
+        // get column ids to display
+        this.columnsToDisplay = new Array();
+        this.data.columns.forEach((element) => {
+            this.columnsToDisplay.push(element[0]);
+        });
+
         /* internal veriables */
         this.isDragging = false;
         this.drawInfo = false;
@@ -51,6 +57,45 @@ class ChartBuilder {
             case 'mouseout':
                 this._handleMouseOut(event);
                 break;
+        }
+    }
+
+    hideColumn(columnId) {
+        if (this.chart.yAxis.columns.length == 1) {
+            return;
+        }
+        let index = this.columnsToDisplay.findIndex((id) => {
+            return id == columnId;
+        });
+        if (index != -1) {
+            this.columnsToDisplay.splice(index, 1);
+            this._clearCanvas();
+            this._init();
+            this._parseData();
+            this._calculateChartData();
+            this._calculateMiniMapData();
+            this._drawChartData();
+            this._drawChartInfo();
+            this._drawMiniMapData();
+            this._drawMiniMapFrame();
+        }
+    }
+
+    showColumn(columnId) {
+        let index = this.columnsToDisplay.findIndex((id) => {
+            return id == columnId;
+        });
+        if (index == -1) {
+            this.columnsToDisplay.push(columnId);
+            this._clearCanvas();
+            this._init();
+            this._parseData();
+            this._calculateChartData();
+            this._calculateMiniMapData();
+            this._drawChartData();
+            this._drawChartInfo();
+            this._drawMiniMapData();
+            this._drawMiniMapFrame();
         }
     }
 
@@ -203,7 +248,7 @@ class ChartBuilder {
         this.canvas.ctx.lineWidth = this.chart.style.lineWidth;
         this.chart.yAxis.columns.forEach((element) => {
             this.canvas.ctx.beginPath();
-            this.canvas.ctx.strokeStyle = this.data.colors[element.name];
+            this.canvas.ctx.strokeStyle = this.data.colors[element.id];
             for (let i = 0; i < element.values.length; i++) {
                 this.canvas.ctx.lineTo(this.chart.xAxis.values[i].scaledValue, element.values[i].scaledValue);
             }
@@ -353,7 +398,7 @@ class ChartBuilder {
 
         this.miniMap.yAxis.columns.forEach((elemnt) => {
             this.canvas.ctx.beginPath();
-            this.canvas.ctx.strokeStyle = this.data.colors[elemnt.name];
+            this.canvas.ctx.strokeStyle = this.data.colors[elemnt.id];
             for (let i = 0; i < elemnt.values.length; i++) {
                 this.canvas.ctx.lineTo(this.miniMap.xAxis.values[i], elemnt.values[i]);
             }
@@ -448,29 +493,35 @@ class ChartBuilder {
         const sliceEndIndex = this.chart.displayEndIndex + 2;
         this.data.columns.slice(0, 1).forEach((column) => {
             this.chart.xAxis = {
-                name: column[0],
+                id: column[0],
                 originalValues: column.slice(sliceStartIndex, sliceEndIndex),
                 values: new Array(),
             };
             this.miniMap.xAxis = {
-                name: column[0],
+                id: column[0],
                 originalValues: column.slice(sliceStartIndex, sliceEndIndex),
                 values: new Array(),
             };
         });
         this.data.columns.slice(1).forEach((column) => {
-            this.chart.yAxis.columns.push({
-                name: column[0],
-                originalValues: column.slice(sliceStartIndex, sliceEndIndex),
-                values: new Array(),
-                color: this.data.colors[column[0]],
+            let index = this.columnsToDisplay.findIndex((id) => {
+                return id == column[0];
             });
-            this.miniMap.yAxis.columns.push({
-                name: column[0],
-                originalValues: column.slice(sliceStartIndex, sliceEndIndex),
-                values: new Array(),
-                color: this.data.colors[column[0]],
-            });
+            if (index != -1) {
+                this.chart.yAxis.columns.push({
+                    id: column[0],
+                    name: this.data.names[column[0]],
+                    originalValues: column.slice(sliceStartIndex, sliceEndIndex),
+                    values: new Array(),
+                    color: this.data.colors[column[0]],
+                });
+                this.miniMap.yAxis.columns.push({
+                    id: column[0],
+                    originalValues: column.slice(sliceStartIndex, sliceEndIndex),
+                    values: new Array(),
+                    color: this.data.colors[column[0]],
+                });
+            }
         });
     }
 
