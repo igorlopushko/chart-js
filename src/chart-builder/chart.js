@@ -8,12 +8,11 @@ export default {
             fonyStyle: 'Helvetica',
             fonyColor: 'rgba(150, 162, 170, 1)',
             color: 'rgba(242, 244, 245, 1)',
+            textTopPadding: 2,
             textLeftPadding: 1,
             textBottomPadding: 5,
-            axisLeftPadding: 7,
-            axisRightPadding: 7,
-            axisTopPadding: 7,
-            axisBottomPadding: 20,
+            topPadding: 7,
+            bottomPadding: 30,
         },
     },
     yAxis: {
@@ -26,7 +25,6 @@ export default {
             },
         ],
         scaleFactor: 0.0,
-        maxValue: 0,
     },
     xAxis: {
         values: [{ scaledValue: 0, originalValue: 0 }],
@@ -35,4 +33,30 @@ export default {
     },
     displayStartIndex: 0,
     displayEndIndex: 0,
+    style: {
+        lineWidth: 2,
+        fontFamily: 'Helvetica',
+    },
+    info: {
+        height: 65,
+        fistLineShift: 40,
+        secondLineShift: 12,
+        fontMultiplier: 9,
+        style: {
+            topPadding: 20,
+            leftPadding: 15,
+            rightPadding: 15,
+        },
+        headerStyle: {
+            fontSize: '12px',
+            fontColor: 'rgba(0, 0, 0, 1)',
+        },
+        valuesStyle: {
+            fontSize: '12px',
+            fontWeight: 'bold',
+        },
+        namesStyle: {
+            fontSize: '8px',
+        },
+    },
 };
