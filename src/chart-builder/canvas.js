@@ -27,5 +27,35 @@ class Canvas {
         this.ctx.lineTo(x + radius, y);
         this.ctx.arcTo(x, y, x, y + radius, radius);
     }
+
+    getOffsetLeft(e) {
+        let offsetLeft = 0;
+        do {
+            if (!isNaN(e.offsetLeft)) {
+                offsetLeft += e.offsetLeft;
+            }
+            if (e.offsetParent !== undefined && e.offsetParent !== null) {
+                e = e.offsetParent;
+            } else {
+                e = null;
+            }
+        } while (e !== null);
+        return offsetLeft;
+    }
+
+    getOffsetTop(e) {
+        let offsetTop = 0;
+        do {
+            if (!isNaN(e.offsetTop)) {
+                offsetTop += e.offsetTop;
+            }
+            if (e.offsetParent !== undefined && e.offsetParent !== null) {
+                e = e.offsetParent;
+            } else {
+                e = null;
+            }
+        } while (e !== null);
+        return offsetTop;
+    }
 }
 export default Canvas;

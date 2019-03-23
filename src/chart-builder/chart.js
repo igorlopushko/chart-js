@@ -6,7 +6,7 @@ export default {
         style: {
             fontSize: 10,
             fonyStyle: 'Helvetica',
-            fonyColor: 'rgba(150, 162, 170, 0.7)',
+            fontColor: 'rgba(150, 162, 170, 0.7)',
             color: 'rgba(150, 162, 170, 0.5)',
             textTopPadding: 2,
             textLeftPadding: 1,
@@ -34,9 +34,12 @@ export default {
     },
     displayStartIndex: 0,
     displayEndIndex: 0,
+    fontMultiplier: 9,
     style: {
         lineWidth: 2,
         fontFamily: 'Helvetica',
+        fontColorLightMode: 'rgba(0, 0, 0, 1)',
+        fontColorDarkMode: 'rgba(255, 255, 255, 1)',
     },
     info: {
         height: 65,
@@ -52,8 +55,6 @@ export default {
         },
         headerStyle: {
             fontSize: '12px',
-            fontColorLightMode: 'rgba(0, 0, 0, 1)',
-            fontColorDarkMode: 'rgba(255, 255, 255, 1)',
         },
         valuesStyle: {
             fontSize: '12px',
@@ -62,5 +63,10 @@ export default {
         namesStyle: {
             fontSize: '10px',
         },
+    },
+    buttons: {
+        items: [{ x: 0, y: 0, width: 0, id: '' }],
+        style: { height: 25, topPadding: 10, leftPadding: 10, textRightPadding: 5, fontSize: 12 },
+        height: 50,
     },
 };
