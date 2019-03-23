@@ -7,15 +7,14 @@ export default {
     devtool: 'inline-source-map', // cheap-variant of SourceMap with module mappings
     context: __dirname,
     entry: [
-        path.resolve(__dirname, 'src/index'),
+        path.resolve(__dirname, 'src/index.dev.js'),
         'eventsource-polyfill', // necessary for hot reloading with IE
         'webpack-hot-middleware/client?reload=true', //note that it reloads the page if hot module reloading fails.
     ],
-    target: 'web',
     output: {
         path: path.resolve(__dirname, 'dist'),
         publicPath: '/',
-        filename: 'bundle.js',
+        filename: 'chart-builder.js',
     },
     devServer: {
         contentBase: path.join(__dirname, 'src'),
@@ -24,7 +23,7 @@ export default {
     plugins: [
         new webpack.HotModuleReplacementPlugin(),
         new HtmlWebpackPlugin({
-            template: 'src/index.html',
+            template: 'src/index.dev.html',
             inject: true,
         }),
     ],
@@ -36,13 +35,6 @@ export default {
                 use: { loader: 'babel-loader', options: { presets: ['@babel/preset-env'] } },
             },
             { test: /\.css$/, use: [{ loader: 'style-loader' }, { loader: 'css-loader' }] },
-            { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, use: [{ loader: 'file-loader', options: {} }] },
-            { test: /\.(woff|woff2)$/, use: [{ loader: 'url?prefix=font/&limit=5000' }] },
-            {
-                test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
-                use: [{ loader: 'url?limit=10000&mimetype=application/octet-stream' }],
-            },
-            { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, use: [{ loader: 'url?limit=10000&mimetype=image/svg+xml' }] },
         ],
     },
 };
