@@ -387,7 +387,7 @@ class ChartBuilder {
             infoBoxX = chartX - infoBoxWidth / 2;
         }
 
-        const infoBoxY = this.chart.axis.style.topPadding;
+        const infoBoxY = this.chart.info.style.topShift;
         const infoBoxCornersRadius = 10;
 
         this.canvas.ctx.save();
@@ -578,6 +578,14 @@ class ChartBuilder {
                     this.canvas.ctx.beginPath();
                     this.canvas.ctx.arc(circleX + 0.1, circleY + 0.1, radius - 2, Math.PI + (Math.PI * 2) / 2, false);
                     this.canvas.ctx.fill();
+                } else {
+                    this.canvas.ctx.beginPath();
+                    this.canvas.ctx.lineWidth = 2;
+                    this.canvas.ctx.strokeStyle = this.chart.buttons.style.checkColor;
+                    this.canvas.ctx.moveTo(circleX - 4, circleY);
+                    this.canvas.ctx.lineTo(circleX - 1, circleY + 3);
+                    this.canvas.ctx.lineTo(circleX + 4, circleY - 2);
+                    this.canvas.ctx.stroke();
                 }
 
                 this.canvas.ctx.font = this.chart.buttons.style.fontSize + 'px ' + this.chart.style.fontFamily;
@@ -682,8 +690,8 @@ class ChartBuilder {
         });
 
         // calculate display axis data
-        this.chart.axis.yLabels.values = new Array();
         this.chart.axis.xLabels.values = new Array();
+        this.chart.axis.yLabels.values = new Array();
         this.chart.axis.grid = new Array();
 
         // calculate Y axis labels
@@ -700,7 +708,7 @@ class ChartBuilder {
             if (yValue > this.chart.axis.style.fontSize + 1) {
                 this.chart.axis.yLabels.values.push({
                     text: value,
-                    x: this.chart.axis.style.textLeftPadding,
+                    x: this.canvas.style.leftPadding,
                     y: yValue - this.chart.axis.style.textBottomPadding,
                 });
                 this.chart.axis.grid.push({

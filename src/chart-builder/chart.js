@@ -47,6 +47,7 @@ export default {
         secondLineShift: 12,
         fontMultiplier: 9,
         style: {
+            topShift: 5,
             topPadding: 20,
             leftPadding: 15,
             rightPadding: 15,
@@ -66,7 +67,14 @@ export default {
     },
     buttons: {
         items: [{ x: 0, y: 0, width: 0, id: '' }],
-        style: { height: 25, topPadding: 10, leftPadding: 10, textRightPadding: 5, fontSize: 12 },
+        style: {
+            height: 25,
+            topPadding: 10,
+            leftPadding: 10,
+            textRightPadding: 5,
+            fontSize: 12,
+            checkColor: 'rgba(255, 255, 255, 1)',
+        },
         height: 50,
     },
 };
