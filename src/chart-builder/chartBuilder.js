@@ -343,12 +343,7 @@ class ChartBuilder {
         }
         this.canvas.ctx.fillStyle =
             this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
-        this.canvas.ctx.fillRect(
-            0,
-            0,
-            this.canvas.width,
-            this.canvas.height
-        );
+        this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     _drawChartData() {
@@ -1002,11 +997,6 @@ class ChartBuilder {
         }
 
         return -1;
-    }
-
-    _writeLog(msg) {
-        let logElement = document.getElementById('log');
-        logElement.innerHTML = logElement.innerHTML + '<br />' + msg;
     }
 }
 
