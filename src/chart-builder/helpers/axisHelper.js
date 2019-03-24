@@ -3,6 +3,17 @@ import DateHelper from './dateHelper';
 class AxisHelper {
     constructor() {
         this.dateHelper = new DateHelper();
+        this.milliseconds = 1000;
+        this.seconds = this.milliseconds * 60;
+        this.hour = 60 * this.seconds;
+        this.day = 24 * this.hour;
+        this.week = 7 * this.day;
+        this.month28 = 28 * this.day;
+        this.month29 = 29 * this.day;
+        this.month30 = 30 * this.day;
+        this.month31 = 31 * this.day;
+        this.year = 7 * this.month31 + this.month28 + 4 * this.month30;
+        this.leapYear = this.year + 1;
     }
 
     getAxisLabelsMultiplier(maxValue, tickCount) {
@@ -15,73 +26,108 @@ class AxisHelper {
 
     getDateIncrementsForAxis(startValue, endValue, ticks) {
         let range = endValue - startValue;
-        const milliseconds = 1000;
-        const seconds = milliseconds * 60;
-        const hour = 60 * seconds;
-        const day = 24 * hour;
-        const week = 7 * day;
-        const month28 = 28 * day;
-        const month29 = 29 * day;
-        const month30 = 30 * day;
-        const month31 = 31 * day;
-        const year = 7 * month31 + month28 + 4 * month30;
-        const leapYear = year + 1;
 
         let result = new Array();
 
-        if (Math.floor(range / hour) <= ticks) {
+        if (Math.floor(range / this.hour) <= ticks) {
             // use hours
-            let count = Math.floor(range / hour);
+            let count = Math.floor(range / this.hour);
             for (let i = 0; i < count; i++) {
                 result.push(startValue);
-                startValue += hour;
+                startValue += this.hour;
             }
-        } else if (Math.floor(range / day) <= ticks) {
+        } else if (Math.floor(range / this.day) <= ticks) {
             // use days
-            let count = Math.floor(range / day);
+            let count = Math.floor(range / this.day);
             for (let i = 0; i < count + 1; i++) {
                 result.push(startValue);
-                startValue += day;
+                startValue += this.day;
             }
-        } else if (Math.floor(range / week) <= ticks) {
+        } else if (Math.floor(range / this.week) <= ticks) {
             // use weeks
-            let count = Math.floor(range / week);
+            result.push(startValue);
+            let count = Math.floor(range / this.week);
             for (let i = 0; i < count + 1; i++) {
+                startValue += this.week;
                 result.push(startValue);
-                startValue += week;
             }
-        } else if (Math.floor(range / month29) <= ticks) {
+        } else if (Math.floor(range / (this.week * 2)) <= ticks) {
+            // use 2 weeks
+            result.push(startValue);
+            let count = Math.floor(range / (this.week * 2));
+            for (let i = 0; i < count + 1; i++) {
+                startValue += this.week;
+                startValue += this.week;
+                result.push(startValue);
+            }
+        } else if (Math.floor(range / this.month29) <= ticks) {
             // use months
             result.push(startValue);
-            let count = Math.floor(range / month29);
+            let count = Math.floor(range / this.month29);
             for (let i = 0; i < count + 1; i++) {
-                if (this._isNextMonth28(startValue)) {
-                    startValue += month28;
-                } else if (this._isNextMonth29(startValue)) {
-                    startValue += month29;
-                } else if (this._isNextMonth30(startValue)) {
-                    startValue += month30;
-                } else if (this._isNextMonth31(startValue)) {
-                    startValue += month31;
-                }
+                startValue += this._getNextMonths(startValue);
                 result.push(startValue);
             }
-        } else if (Math.floor(range / year) <= ticks) {
+        } else if (Math.floor(range / (this.month29 * 2) <= ticks)) {
+            // use every 2 months
+            result.push(startValue);
+            let count = Math.floor(range / (this.month29 * 2));
+            for (let i = 0; i < count + 1; i++) {
+                startValue += this._getNextMonths(startValue);
+                startValue += this._getNextMonths(startValue);
+                result.push(startValue);
+            }
+        } else if (Math.floor(range / (this.month29 * 3) <= ticks)) {
+            // use every 3 months
+            result.push(startValue);
+            let count = Math.floor(range / (this.month29 * 3));
+            for (let i = 0; i < count + 1; i++) {
+                startValue += this._getNextMonths(startValue);
+                startValue += this._getNextMonths(startValue);
+                startValue += this._getNextMonths(startValue);
+                result.push(startValue);
+            }
+        } else if (Math.floor(range / (this.month29 * 6) <= ticks)) {
+            // use every 6 months
+            result.push(startValue);
+            let count = Math.floor(range / (this.month29 * 6));
+            for (let i = 0; i < count + 1; i++) {
+                startValue += this._getNextMonths(startValue);
+                startValue += this._getNextMonths(startValue);
+                startValue += this._getNextMonths(startValue);
+                startValue += this._getNextMonths(startValue);
+                startValue += this._getNextMonths(startValue);
+                startValue += this._getNextMonths(startValue);
+                result.push(startValue);
+            }
+        } else if (Math.floor(range / this.year) <= ticks) {
             // use years
-            let count = Math.floor(range / year);
+            let count = Math.floor(range / this.year);
             for (let i = 0; i < count + 1; i++) {
                 result.push(startValue);
                 if (i < count) {
                     if (this._isNextYearLeap(startValue)) {
-                        startValue += leapYear;
+                        startValue += this.leapYear;
                     } else {
-                        startValue += year;
+                        startValue += this.year;
                     }
                 }
             }
         }
 
         return result;
+    }
+
+    _getNextMonths(currentValue) {
+        if (this._isNextMonth28(currentValue)) {
+            return this.month28;
+        } else if (this._isNextMonth29(currentValue)) {
+            return this.month29;
+        } else if (this._isNextMonth30(currentValue)) {
+            return this.month30;
+        } else if (this._isNextMonth31(currentValue)) {
+            return this.month31;
+        }
     }
 
     _isNextYearLeap(timestamp) {
