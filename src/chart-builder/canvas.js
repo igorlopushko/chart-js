@@ -12,6 +12,11 @@ class Canvas {
             darkModeColor: 'rgba(36, 47, 62, 1)',
         };
 
+        this.animation = {
+            iterations: 30,
+            timeOut: 10,
+        };
+
         this.xScaleShift = (this.width - this.style.leftPadding - this.style.rightPadding) / this.width;
     }
 
