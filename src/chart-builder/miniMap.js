@@ -19,7 +19,7 @@ class MiniMap {
         this.height = 50;
         this.width = 0;
         this.frame = {
-            minDisplayPositions: 30,
+            minDisplayPositions: 10,
             dragLineWidth: 8,
             // is used to reduse issue with targeting exact drag line position
             dragErrorPixelFactor: 10,

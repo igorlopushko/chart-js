@@ -70,7 +70,7 @@ class Chart {
         this.buttons = {
             items: [{ x: 0, y: 0, width: 0, id: '' }],
             style: {
-                height: 25,
+                height: 30,
                 topPadding: 10,
                 leftPadding: 10,
                 textRightPadding: 5,

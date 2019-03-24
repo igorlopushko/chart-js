@@ -44,6 +44,13 @@ class ChartBuilder {
         canvas.addEventListener('touchcancel', this);
         canvas.addEventListener('touchmove', this);
 
+        this.render();
+    }
+
+    render() {
+        this.canvas.height = this.canvas.ref.height;
+        this.canvas.width = this.canvas.ref.width;
+
         this._init();
         this._parseData();
         this._calculateData(0, 0);
@@ -334,6 +341,14 @@ class ChartBuilder {
             this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.canvas.ctx.restore();
         }
+        this.canvas.ctx.fillStyle =
+            this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
+        this.canvas.ctx.fillRect(
+            0,
+            0,
+            this.canvas.width,
+            this.canvas.height
+        );
     }
 
     _drawChartData() {
@@ -621,7 +636,7 @@ class ChartBuilder {
                 this.canvas.ctx.save();
                 this.canvas.ctx.lineWidth = 0.7;
                 this.canvas.ctx.strokeStyle = this.chart.buttons.style.color;
-                this.canvas.drawRoundedRect(x, y, width, height, 12);
+                this.canvas.drawRoundedRect(x, y, width, height, 15);
                 this.canvas.ctx.stroke();
 
                 // draw button color circle

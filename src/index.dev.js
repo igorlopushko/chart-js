@@ -3303,8 +3303,32 @@ if (canvas1.getContext) {
 
 let canvas2 = document.getElementById('canvas2');
 if (canvas2.getContext) {
-    let builder2 = new ChartBuilder(canvas2, data[4]);
+    let builder2 = new ChartBuilder(canvas2, data[1]);
     document.getElementById('mode2').onclick = function() {
         builder2.swithcMode();
+    };
+}
+
+let canvas3 = document.getElementById('canvas3');
+if (canvas3.getContext) {
+    let builder3 = new ChartBuilder(canvas3, data[2]);
+    document.getElementById('mode3').onclick = function() {
+        builder3.swithcMode();
+    };
+}
+
+let canvas4 = document.getElementById('canvas4');
+if (canvas4.getContext) {
+    let builder3 = new ChartBuilder(canvas4, data[3]);
+    document.getElementById('mode4').onclick = function() {
+        builder3.swithcMode();
+    };
+}
+
+let canvas5 = document.getElementById('canvas5');
+if (canvas5.getContext) {
+    let builder4 = new ChartBuilder(canvas5, data[4]);
+    document.getElementById('mode5').onclick = function() {
+        builder4.swithcMode();
     };
 }
