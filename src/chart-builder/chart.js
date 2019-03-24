@@ -74,6 +74,7 @@ export default {
             textRightPadding: 5,
             fontSize: 12,
             checkColor: 'rgba(255, 255, 255, 1)',
+            color: 'rgba(150, 162, 170, 0.7)',
         },
         height: 50,
     },

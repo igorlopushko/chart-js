@@ -32,6 +32,7 @@ class ChartBuilder {
         this.clickXInfo = 0;
         this.isNightMode = false;
         this.lastMaxValue = 0;
+        this.lastMiniMapMaxValue = 0;
 
         canvas.addEventListener('mousedown', this);
         canvas.addEventListener('mouseup', this);
@@ -45,25 +46,26 @@ class ChartBuilder {
 
         this._init();
         this._parseData();
-        this._calculateData(0);
+        this._calculateData(0, 0);
         this._drawComponents();
     }
 
-    _calculateData(maxValue) {
+    _calculateData(maxValue, miniMapMaxValue) {
         this._calculateChartData(maxValue);
-        this._calculateMiniMapData();
+        this._calculateMiniMapData(miniMapMaxValue);
     }
     _drawComponents() {
         this._clearCanvas();
-        this._drawChartData();
-        this._drawChartInfo();
         this._drawMiniMapData();
         this._drawMiniMapFrame();
+        this._drawChartData();
+        this._drawChartInfo();
         this._drawButtons();
     }
 
     _updateComponent() {
         this._calculateChartData(0);
+        this._calculateMiniMapData(0);
         this._drawComponents();
     }
 
@@ -88,23 +90,31 @@ class ChartBuilder {
             this._init();
             this._parseData();
 
-            let newMaxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
-            if (newMaxValue < this.lastMaxValue) {
-                let increment = (this.lastMaxValue - newMaxValue) / this.canvas.animation.iterations;
-                let animatedMaxValue = this.lastMaxValue - increment;
+            let newChartMaxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
+            let newMiniMapMaxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
+            if (newChartMaxValue < this.lastMaxValue) {
+                let incrementChart = (this.lastMaxValue - newChartMaxValue) / this.canvas.animation.iterations;
+                let incrementMiniMap =
+                    (this.lastMiniMapMaxValue - newMiniMapMaxValue) / this.canvas.animation.iterations;
+                let animatedChartMaxValue = this.lastMaxValue - incrementChart;
+                let animatedMiniMapMaxValue = this.lastMiniMapMaxValue - incrementMiniMap;
                 let that = this;
                 for (let i = 0; i < this.canvas.animation.iterations; i++) {
                     (function(i) {
                         setTimeout(function() {
                             //apply animation
-                            that._calculateData(animatedMaxValue - increment * i);
+                            that._calculateData(
+                                animatedChartMaxValue - incrementChart * i,
+                                animatedMiniMapMaxValue - incrementMiniMap * i
+                            );
                             that._drawComponents();
                         }, that.canvas.animation.timeOut * i);
                     })(i);
                 }
-                this.lastMaxValue = newMaxValue;
+                this.lastMaxValue = newChartMaxValue;
+                this.lastMiniMapMaxValue = newMiniMapMaxValue;
             } else {
-                this._calculateData(0);
+                this._calculateData(0, 0);
                 this._drawComponents();
             }
         }
@@ -119,23 +129,31 @@ class ChartBuilder {
             this._init();
             this._parseData();
 
-            let newMaxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
-            if (newMaxValue > this.lastMaxValue) {
-                let increment = (newMaxValue - this.lastMaxValue) / this.canvas.animation.iterations;
-                let animatedMaxValue = this.lastMaxValue + increment;
+            let newChartMaxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
+            let newMiniMapMaxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
+            if (newChartMaxValue > this.lastMaxValue) {
+                let incrementChart = (newChartMaxValue - this.lastMaxValue) / this.canvas.animation.iterations;
+                let incrementMiniMap =
+                    (newMiniMapMaxValue - this.lastMiniMapMaxValue) / this.canvas.animation.iterations;
+                let animatedChartMaxValue = this.lastMaxValue + incrementChart;
+                let animatedMiniMapMaxValue = this.lastMiniMapMaxValue + incrementMiniMap;
                 let that = this;
                 for (let i = 0; i < this.canvas.animation.iterations; i++) {
                     (function(i) {
                         setTimeout(function() {
                             //apply animation
-                            that._calculateData(animatedMaxValue + increment * i);
+                            that._calculateData(
+                                animatedChartMaxValue + incrementChart * i,
+                                animatedMiniMapMaxValue + incrementMiniMap * i
+                            );
                             that._drawComponents();
                         }, that.canvas.animation.timeOut * i);
                     })(i);
                 }
-                this.lastMaxValue = newMaxValue;
+                this.lastMaxValue = newChartMaxValue;
+                this.lastMiniMapMaxValue = newMiniMapMaxValue;
             } else {
-                this._calculateData(0);
+                this._calculateData(0, 0);
                 this._drawComponents();
             }
         }
@@ -326,6 +344,16 @@ class ChartBuilder {
     }
 
     _drawChartData() {
+        // draw background rectangle to overlay minimap animation
+        this.canvas.ctx.fillStyle =
+            this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
+        this.canvas.ctx.fillRect(
+            0,
+            0,
+            this.canvas.width,
+            this.canvas.height - this.miniMap.height - this.chart.buttons.height - this.miniMap.frame.border.width
+        );
+
         // draw axis grid
         this.canvas.ctx.lineWidth = 1;
         this.canvas.ctx.strokeStyle = this.chart.axis.style.color;
@@ -475,13 +503,6 @@ class ChartBuilder {
     }
 
     _drawMiniMapData() {
-        this.canvas.ctx.clearRect(
-            0,
-            this.canvas.height - this.miniMap.height - this.chart.buttons.height,
-            this.canvas.width,
-            this.miniMap.height
-        );
-
         this.canvas.ctx.lineWidth = 1;
         this.canvas.ctx.lineJoin = 'round';
         this.canvas.ctx.lineCap = 'round';
@@ -606,6 +627,7 @@ class ChartBuilder {
 
                 this.canvas.ctx.save();
                 this.canvas.ctx.lineWidth = 0.7;
+                this.canvas.ctx.strokeStyle = this.chart.buttons.style.color;
                 this.canvas.drawRoundedRect(x, y, width, height, 12);
                 this.canvas.ctx.stroke();
 
@@ -684,6 +706,7 @@ class ChartBuilder {
     }
 
     _calculateChartData(animatedMaxValue) {
+        // calculate maxValue
         let maxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
         let maxValueToUse = 0;
         if (this.lastMaxValue == 0) {
@@ -806,13 +829,28 @@ class ChartBuilder {
         }
     }
 
-    _calculateMiniMapData() {
+    _calculateMiniMapData(animatedMaxValue) {
+        // reset data
         this.miniMap.xAxis.values = [];
+        this.miniMap.yAxis.columns.forEach((element) => {
+            element.values = [];
+        });
+
+        // calculate maxValue
+        let maxValueToUse = 0;
+        let maxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
+        if (this.lastMiniMapMaxValue == 0) {
+            this.lastMiniMapMaxValue = maxValue;
+        }
+        if (animatedMaxValue == 0) {
+            maxValueToUse = maxValue;
+        } else {
+            maxValueToUse = animatedMaxValue;
+        }
 
         // calcualate axis scale factor
-        let maxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
         this.miniMap.xAxis.scaleFactor = this.canvas.width / (this.chart.xAxis.originalValues.length - 1);
-        this.miniMap.yAxis.scaleFactor = this.miniMap.height / maxValue;
+        this.miniMap.yAxis.scaleFactor = this.miniMap.height / maxValueToUse;
 
         // calculate X axis values
         this.miniMap.xAxis.originalValues.forEach((element, index) => {
