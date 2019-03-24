@@ -791,10 +791,14 @@ class ChartBuilder {
         }
 
         // calculate X axis labels
+        let count = Math.ceil(
+            (this.canvas.width - this.canvas.style.leftPadding - this.canvas.style.rightPadding) /
+                this.chart.axis.style.textLabelPlaceHolder
+        );
         let ticks = this.axisHelper.getDateIncrementsForAxis(
             this.chart.xAxis.originalValues[this.chart.displayStartIndex],
             this.chart.xAxis.originalValues[this.chart.displayEndIndex],
-            this.chart.axis.xLabels.displayCoef
+            count
         );
         for (let i = 0; i < ticks.length; i++) {
             let xIndex = this.chart.xAxis.values.findIndex((element, index) => {
@@ -803,7 +807,17 @@ class ChartBuilder {
                 }
             });
             if (xIndex != -1 && xIndex < this.chart.xAxis.values.length) {
-                let xValue = this.chart.xAxis.values[xIndex].scaledValue + this.canvas.style.leftPadding;
+                let xValue = 0;
+                if (i == 0) {
+                    xValue = this.chart.xAxis.values[xIndex].scaledValue;
+                } else if (
+                    this.chart.xAxis.values[xIndex].scaledValue + 20 >
+                    this.canvas.width - this.canvas.style.rightPadding - this.canvas.style.leftPadding
+                ) {
+                    xValue = this.canvas.width - this.canvas.style.rightPadding - this.canvas.style.leftPadding - 25;
+                } else {
+                    xValue = this.chart.xAxis.values[xIndex].scaledValue - this.chart.axis.style.textLeftPadding;
+                }
                 let originalValue = ticks[i];
                 let date = this.dateHelper.convertToDate(originalValue);
                 let displayText = this.dateHelper.getMonthShortName(date.getMonth()) + ' ' + date.getDate();

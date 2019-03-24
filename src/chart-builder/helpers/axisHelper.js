@@ -39,22 +39,22 @@ class AxisHelper {
         } else if (Math.floor(range / day) <= ticks) {
             // use days
             let count = Math.floor(range / day);
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < count + 1; i++) {
                 result.push(startValue);
                 startValue += day;
             }
         } else if (Math.floor(range / week) <= ticks) {
             // use weeks
             let count = Math.floor(range / week);
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < count + 1; i++) {
                 result.push(startValue);
                 startValue += week;
             }
         } else if (Math.floor(range / month29) <= ticks) {
             // use months
-            let count = Math.floor(range / month29);
             result.push(startValue);
-            for (let i = 0; i < ticks; i++) {
+            let count = Math.floor(range / month29);
+            for (let i = 0; i < count + 1; i++) {
                 if (this._isNextMonth28(startValue)) {
                     startValue += month28;
                 } else if (this._isNextMonth29(startValue)) {
@@ -69,7 +69,7 @@ class AxisHelper {
         } else if (Math.floor(range / year) <= ticks) {
             // use years
             let count = Math.floor(range / year);
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < count + 1; i++) {
                 result.push(startValue);
                 if (i < count) {
                     if (this._isNextYearLeap(startValue)) {
