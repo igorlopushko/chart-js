@@ -63,33 +63,29 @@ class ChartBuilder {
         this._drawButtons();
     }
 
-    _updateComponent() {
-        this._calculateChartData(0);
-        this._calculateMiniMapData(0);
-        this._drawComponents();
-    }
-
     swithcMode() {
         if (this.isNightMode == true) {
             this.isNightMode = false;
         } else {
             this.isNightMode = true;
         }
-        this._updateComponent();
+
+        this._calculateChartData(0);
+        this._calculateMiniMapData(0);
+        this._drawComponents();
     }
 
-    _animate() {
+    _animate(animationSettings) {
         let newChartMaxValue = this._findMaxValue(this.chart.displayStartIndex, this.chart.displayEndIndex);
         let newMiniMapMaxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
 
         if (newChartMaxValue < this.previousChartMaxValue) {
-            let incrementChart = (this.previousChartMaxValue - newChartMaxValue) / this.canvas.animation.iterations;
-            let incrementMiniMap =
-                (this.previousMiniMapMaxValue - newMiniMapMaxValue) / this.canvas.animation.iterations;
+            let incrementChart = (this.previousChartMaxValue - newChartMaxValue) / animationSettings.iterations;
+            let incrementMiniMap = (this.previousMiniMapMaxValue - newMiniMapMaxValue) / animationSettings.iterations;
             let animatedChartMaxValue = this.previousChartMaxValue - incrementChart;
             let animatedMiniMapMaxValue = this.previousMiniMapMaxValue - incrementMiniMap;
             let that = this;
-            for (let i = 0; i < this.canvas.animation.iterations; i++) {
+            for (let i = 0; i < animationSettings.iterations; i++) {
                 (function(i) {
                     setTimeout(function() {
                         that._calculateData(
@@ -97,19 +93,18 @@ class ChartBuilder {
                             animatedMiniMapMaxValue - incrementMiniMap * i
                         );
                         that._drawComponents();
-                    }, that.canvas.animation.timeOut * i);
+                    }, animationSettings.timeOut * i);
                 })(i);
             }
             this.previousChartMaxValue = newChartMaxValue;
             this.previousMiniMapMaxValue = newMiniMapMaxValue;
         } else if (newChartMaxValue > this.previousChartMaxValue) {
-            let incrementChart = (newChartMaxValue - this.previousChartMaxValue) / this.canvas.animation.iterations;
-            let incrementMiniMap =
-                (newMiniMapMaxValue - this.previousMiniMapMaxValue) / this.canvas.animation.iterations;
+            let incrementChart = (newChartMaxValue - this.previousChartMaxValue) / animationSettings.iterations;
+            let incrementMiniMap = (newMiniMapMaxValue - this.previousMiniMapMaxValue) / animationSettings.iterations;
             let animatedChartMaxValue = this.previousChartMaxValue + incrementChart;
             let animatedMiniMapMaxValue = this.previousMiniMapMaxValue + incrementMiniMap;
             let that = this;
-            for (let i = 0; i < this.canvas.animation.iterations; i++) {
+            for (let i = 0; i < animationSettings.iterations; i++) {
                 (function(i) {
                     setTimeout(function() {
                         that._calculateData(
@@ -117,7 +112,7 @@ class ChartBuilder {
                             animatedMiniMapMaxValue + incrementMiniMap * i
                         );
                         that._drawComponents();
-                    }, that.canvas.animation.timeOut * i);
+                    }, animationSettings.timeOut * i);
                 })(i);
             }
             this.previousChartMaxValue = newChartMaxValue;
@@ -139,7 +134,7 @@ class ChartBuilder {
             this.columnsToDisplay.splice(index, 1);
             this._init();
             this._parseData();
-            this._animate();
+            this._animate(this.canvas.buttonAnimation);
         }
     }
 
@@ -151,7 +146,7 @@ class ChartBuilder {
             this.columnsToDisplay.push(columnId);
             this._init();
             this._parseData();
-            this._animate();
+            this._animate(this.canvas.buttonAnimation);
         }
     }
 
@@ -229,7 +224,9 @@ class ChartBuilder {
         } else if (this._isOverChart(x, y)) {
             this.clickXInfo = x;
             this.drawInfo = true;
-            this._updateComponent();
+            this._calculateChartData(0);
+            this._calculateMiniMapData(0);
+            this._drawComponents();
         } else if (this._isOverButton(x, y)) {
             this.canvas.ref.style.cursor = 'pointer';
             let id = this._getButtonId(x, y);
@@ -258,7 +255,7 @@ class ChartBuilder {
             for (let i = 0; i < this.chart.displayEndIndex - this.miniMap.frame.minDisplayPositions - 2; i++) {
                 if (x >= this.miniMap.xAxis.values[i] && x <= this.miniMap.xAxis.values[i + 1]) {
                     this.chart.displayStartIndex = i;
-                    this._updateComponent();
+                    this._animate(this.canvas.scrollAnimation);
                     break;
                 }
             }
@@ -275,7 +272,7 @@ class ChartBuilder {
                     this.chart.displayEndIndex += 1;
                 }
             }
-            this._updateComponent();
+            this._animate(this.canvas.scrollAnimation);
             this.clickX = x;
         } else if (this.isDragging == true && this.actionType == ActionTypes.DRAG_RIGHT_LINE) {
             // drag right line
@@ -286,7 +283,7 @@ class ChartBuilder {
             ) {
                 if (x <= this.miniMap.xAxis.values[i] && x >= this.miniMap.xAxis.values[i - 1]) {
                     this.chart.displayEndIndex = i;
-                    this._updateComponent();
+                    this._animate(this.canvas.scrollAnimation);
                     break;
                 }
             }
