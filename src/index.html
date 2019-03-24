@@ -3303,19 +3303,86 @@
                     },
                 ];
 
-                let canvas = document.getElementById('canvas');
+                (function(canvasId, switchBtnId, data) {
+                    let canvas = document.getElementById(canvasId);
+                    if (canvas.getContext) {
+                        let builder = new ChartBuilder.create(canvas, data);
+                        document.getElementById(switchBtnId).onclick = function() {
+                            builder.swithcMode();
+                        };
+                    }
+                })('canvas1', 'mode1', data[0]);
 
-                if (canvas.getContext) {
-                    let builder = ChartBuilder.create(canvas, data[0]);
-                    document.getElementById('mode').onclick = function() {
-                        builder.swithcMode();
-                    };
-                }
+                (function(canvasId, switchBtnId, data) {
+                    let canvas = document.getElementById(canvasId);
+                    if (canvas.getContext) {
+                        let builder = new ChartBuilder.create(canvas, data);
+                        document.getElementById(switchBtnId).onclick = function() {
+                            builder.swithcMode();
+                        };
+                    }
+                })('canvas2', 'mode2', data[1]);
+
+                (function(canvasId, switchBtnId, data) {
+                    let canvas = document.getElementById(canvasId);
+                    if (canvas.getContext) {
+                        let builder = new ChartBuilder.create(canvas, data);
+                        document.getElementById(switchBtnId).onclick = function() {
+                            builder.swithcMode();
+                        };
+                    }
+                })('canvas3', 'mode3', data[2]);
+
+                (function(canvasId, switchBtnId, data) {
+                    let canvas = document.getElementById(canvasId);
+                    if (canvas.getContext) {
+                        let builder = new ChartBuilder.create(canvas, data);
+                        document.getElementById(switchBtnId).onclick = function() {
+                            builder.swithcMode();
+                        };
+                    }
+                })('canvas4', 'mode4', data[3]);
+
+                (function(canvasId, switchBtnId, data) {
+                    let canvas = document.getElementById(canvasId);
+                    if (canvas.getContext) {
+                        let builder = new ChartBuilder.create(canvas, data);
+                        document.getElementById(switchBtnId).onclick = function() {
+                            builder.swithcMode();
+                        };
+                    }
+                })('canvas5', 'mode5', data[4]);
             });
         </script>
-        <canvas id="canvas" width="500" height="450"></canvas>
         <div>
-            <input type="button" value="Switch mode" id="mode" />
+            <canvas id="canvas1" width="500" height="450"></canvas>
+            <div>
+                <input type="button" value="Switch mode" id="mode1" />
+            </div>
+        </div>
+        <div>
+            <canvas id="canvas2" width="500" height="450"></canvas>
+            <div>
+                <input type="button" value="Switch mode" id="mode2" />
+            </div>
+        </div>
+        <div>
+            <canvas id="canvas3" width="500" height="450"></canvas>
+            <div>
+                <input type="button" value="Switch mode" id="mode3" />
+            </div>
+        </div>
+        <div>
+            <canvas id="canvas4" width="500" height="450"></canvas>
+            <div>
+                <input type="button" value="Switch mode" id="mode4" />
+            </div>
+        </div>
+        <div>
+            <canvas id="canvas5" width="500" height="450"></canvas>
+            <div>
+                <input type="button" value="Switch mode" id="mode5" />
+            </div>
         </div>
     </body>
 </html>

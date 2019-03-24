@@ -1,16 +1,16 @@
-import chart from './chart';
-import miniMap from './miniMap';
+import MiniMap from './miniMap';
 import * as ActionTypes from './dragActionTypes';
 import DateHelper from './helpers/dateHelper';
 import AxisHelper from './helpers/axisHelper';
 import Canvas from './canvas';
+import Chart from './chart';
 
 class ChartBuilder {
     constructor(canvas, data) {
         this.canvas = new Canvas(canvas);
         this.data = data;
-        this.chart = chart;
-        this.miniMap = miniMap;
+        this.chart = new Chart();
+        this.miniMap = new MiniMap();
         this.dateHelper = new DateHelper();
         this.axisHelper = new AxisHelper();
 

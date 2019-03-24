@@ -8,17 +8,17 @@
         <script src="http://code.jquery.com/jquery-3.3.1.min.js"></script>
     </head>
     <body>
-        <canvas id="canvas" width="500" height="450"></canvas>
         <div>
-            <input
-                type="button"
-                value="clear log"
-                id="btnClear"
-                onclick="{document.getElementById('log').innerHTML = '' }"
-            />
+            <canvas id="canvas1" width="500" height="450"></canvas>
+            <div>
+                <input type="button" value="Switch mode" id="mode1" />
+            </div>
         </div>
         <div>
-            <input type="button" value="Switch mode" id="mode" />
+            <canvas id="canvas2" width="500" height="450"></canvas>
+            <div>
+                <input type="button" value="Switch mode" id="mode2" />
+            </div>
         </div>
         <div id="log"></div>
     </body>

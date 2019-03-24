@@ -3293,11 +3293,18 @@ let data = [
     },
 ];
 
-let canvas = document.getElementById('canvas');
+let canvas1 = document.getElementById('canvas1');
+if (canvas1.getContext) {
+    let builder1 = new ChartBuilder(canvas1, data[0]);
+    document.getElementById('mode1').onclick = function() {
+        builder1.swithcMode();
+    };
+}
 
-if (canvas.getContext) {
-    let builder = new ChartBuilder(canvas, data[4]);
-    document.getElementById('mode').onclick = function() {
-        builder.swithcMode();
+let canvas2 = document.getElementById('canvas2');
+if (canvas2.getContext) {
+    let builder2 = new ChartBuilder(canvas2, data[4]);
+    document.getElementById('mode2').onclick = function() {
+        builder2.swithcMode();
     };
 }
