@@ -1,7 +1,7 @@
 class Chart {
     constructor() {
         this.axis = {
-            grid: { values: [{ x1: 0, y1: 0, x2: 0, y2: 0 }], style: { lineWidth: 0.3 } },
+            grid: { values: [{ x1: 0, y1: 0, x2: 0, y2: 0 }], style: { lineWidth: 0.5 } },
             xLabels: { displayCoef: 8, values: [{ text: '', x: 0, y: 0 }] },
             yLabels: { displayCoef: 10, values: [{ text: '', x: 0, y: 0 }] },
             style: {
@@ -10,7 +10,7 @@ class Chart {
                 lightModeFontColor: 'rgba(150, 162, 170, 1)',
                 darkModeFontColor: 'rgba(84, 103, 120, 1)',
                 color: 'rgba(150, 162, 170, 0.5)',
-                darkModeColor: 'rgba(30, 40, 62, 1)',
+                darkModeColor: 'rgba(84, 103, 120, 0.8)',
                 textTopPadding: 3,
                 textLeftPadding: 10,
                 textBottomPadding: 5,

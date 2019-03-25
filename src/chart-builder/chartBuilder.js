@@ -363,6 +363,9 @@ class ChartBuilder {
     }
 
     _clearCanvas() {
+        /*this.canvas.ctx.fillStyle =
+            this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.ctx.lightModeColor;
+        this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);*/
         this.canvas.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         if (this.isNightMode == true) {
             this.canvas.ctx.save();
@@ -392,7 +395,7 @@ class ChartBuilder {
         this.chart.axis.grid.values.forEach((element) => {
             this.canvas.ctx.beginPath();
             this.canvas.ctx.strokeStyle =
-                this.isNightMode == true ? this.chart.axis.style.darkModeColor : this.chart.axis.style.lightModeColor;
+                this.isNightMode == true ? this.chart.axis.style.lightModeColor : this.chart.axis.style.lightModeColor;
             this.canvas.ctx.moveTo(element.x1, element.y1);
             this.canvas.ctx.lineTo(element.x2, element.y2);
             this.canvas.ctx.stroke();
