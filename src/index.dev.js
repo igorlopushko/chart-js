@@ -3295,7 +3295,8 @@ let data = [
 
 let canvas1 = document.getElementById('canvas1');
 if (canvas1.getContext) {
-    let builder1 = new ChartBuilder(canvas1, data[0]);
+    let config1 = { yLabelsDisplayCoef: 12, minDisplayPositions: 15 };
+    let builder1 = new ChartBuilder(canvas1, data[0], config1);
     document.getElementById('mode1').onclick = function() {
         builder1.swithcMode();
     };
@@ -3303,7 +3304,8 @@ if (canvas1.getContext) {
 
 let canvas2 = document.getElementById('canvas2');
 if (canvas2.getContext) {
-    let builder2 = new ChartBuilder(canvas2, data[1]);
+    let config2 = { yLabelsDisplayCoef: 10, minDisplayPositions: 20 };
+    let builder2 = new ChartBuilder(canvas2, data[1], config2);
     document.getElementById('mode2').onclick = function() {
         builder2.swithcMode();
     };
@@ -3311,7 +3313,8 @@ if (canvas2.getContext) {
 
 let canvas3 = document.getElementById('canvas3');
 if (canvas3.getContext) {
-    let builder3 = new ChartBuilder(canvas3, data[2]);
+    let config3 = { yLabelsDisplayCoef: 10, minDisplayPositions: 15 };
+    let builder3 = new ChartBuilder(canvas3, data[2], config3);
     document.getElementById('mode3').onclick = function() {
         builder3.swithcMode();
     };
@@ -3319,7 +3322,8 @@ if (canvas3.getContext) {
 
 let canvas4 = document.getElementById('canvas4');
 if (canvas4.getContext) {
-    let builder3 = new ChartBuilder(canvas4, data[3]);
+    let config4 = { yLabelsDisplayCoef: 10, minDisplayPositions: 15 };
+    let builder3 = new ChartBuilder(canvas4, data[3], config4);
     document.getElementById('mode4').onclick = function() {
         builder3.swithcMode();
     };
@@ -3327,7 +3331,8 @@ if (canvas4.getContext) {
 
 let canvas5 = document.getElementById('canvas5');
 if (canvas5.getContext) {
-    let builder4 = new ChartBuilder(canvas5, data[4]);
+    let config5 = { yLabelsDisplayCoef: 10, minDisplayPositions: 30 };
+    let builder4 = new ChartBuilder(canvas5, data[4], config5);
     document.getElementById('mode5').onclick = function() {
         builder4.swithcMode();
     };
