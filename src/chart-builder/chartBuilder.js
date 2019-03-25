@@ -56,6 +56,8 @@ class ChartBuilder {
         this.canvas.height = this.canvas.ref.height;
         this.canvas.width = this.canvas.ref.width;
 
+        this._setupCanvas();
+
         this._init();
         this._parseData();
         this._calculateData(0, 0);
@@ -358,8 +360,6 @@ class ChartBuilder {
         this.miniMap.x = 0;
         this.miniMap.y = this.canvas.height - this.miniMap.height - this.chart.buttons.height;
         this.miniMap.width = this.canvas.width;
-
-        this._setupCanvas();
     }
 
     _clearCanvas() {
