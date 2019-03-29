@@ -5,7 +5,7 @@ export default {
     mode: 'production',
     devtool: 'source-map',
     context: __dirname,
-    entry: ['@babel/polyfill', path.resolve(__dirname, './src/index.prod.js')],
+    entry: [path.resolve(__dirname, './src/index.prod.js')],
     output: {
         path: path.resolve(__dirname, 'dist'),
         // rename to proper file name
@@ -43,6 +43,7 @@ export default {
                 exclude: /(node_modules|bower_components)/,
                 use: { loader: 'babel-loader', options: { presets: ['@babel/preset-env'] } },
             },
+            { test: /\.html$/, use: [{ loader: 'html-loader' }] },
             { test: /\.css$/, use: [{ loader: 'style-loader' }, { loader: 'css-loader' }] },
         ],
     },
