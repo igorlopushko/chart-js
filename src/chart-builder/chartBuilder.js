@@ -36,24 +36,21 @@ class ChartBuilder {
 
         this._setConfigValues(config);
 
-        canvas.addEventListener('mousedown', this);
-        canvas.addEventListener('mouseup', this);
-        canvas.addEventListener('mousemove', this);
-        canvas.addEventListener('mouseout', this);
+        this.canvas.ref.addEventListener('mousedown', this);
+        this.canvas.ref.addEventListener('mouseup', this);
+        this.canvas.ref.addEventListener('mousemove', this);
+        this.canvas.ref.addEventListener('mouseout', this);
 
-        canvas.addEventListener('touchstart', this);
-        canvas.addEventListener('touchend', this);
-        canvas.addEventListener('touchcancel', this);
-        canvas.addEventListener('touchmove', this);
+        this.canvas.ref.addEventListener('touchstart', this);
+        this.canvas.ref.addEventListener('touchend', this);
+        this.canvas.ref.addEventListener('touchcancel', this);
+        this.canvas.ref.addEventListener('touchmove', this);
 
         this.render();
     }
 
     // should be called each time component has to be re-rendered.
     render() {
-        this.canvas.height = this.canvas.ref.height;
-        this.canvas.width = this.canvas.ref.width;
-
         this.canvas.setup();
 
         this._init();
@@ -183,31 +180,30 @@ class ChartBuilder {
         event.stopPropagation();
         switch (event.type) {
             case 'mousedown':
-                this._handleMouseDown(event.offsetX, event.offsetY);
+                this._handleMouseDown(event);
                 break;
             case 'mouseup':
-                this._handleMouseUp(event);
+                this._handleMouseUp();
                 break;
             case 'mousemove':
-                this._handleMouseMove(event.offsetX, event.offsetY);
+                this._handleMouseMove(event);
                 break;
             case 'mouseout':
                 this._handleMouseOut(event);
                 break;
             case 'touchstart':
             case 'touchmove':
-                this.isTouch = true;
                 this._handleTouch(event);
                 break;
             case 'touchend':
             case 'touchcancel':
-                this.isTouch = false;
-                this._handleMouseOut(event);
+                this._handleMouseOut();
                 break;
         }
     }
 
     _handleTouch(event) {
+        this.isTouch = true;
         event.preventDefault();
         if (event.touches.length > 1 || (event.type == 'touchend' && event.touches.length > 0)) {
             return;
@@ -233,7 +229,9 @@ class ChartBuilder {
         }
     }
 
-    _handleMouseDown(x, y) {
+    _handleMouseDown(e) {
+        let x = e.offsetX;
+        let y = e.offsetY;
         if (this._isOverLeftDragLine(x, y)) {
             this.isDragging = true;
             this.drawInfo = false;
@@ -272,7 +270,7 @@ class ChartBuilder {
         }
     }
 
-    _handleMouseUp(event) {
+    _handleMouseUp() {
         this.isDragging = false;
         this.actionType = ActionTypes.EMPTY;
         this.canvas.ref.style.cursor = 'default';
@@ -319,7 +317,9 @@ class ChartBuilder {
         }
     }
 
-    _handleMouseMove(x, y) {
+    _handleMouseMove(e) {
+        let x = e.offsetX;
+        let y = e.offsetY;
         if (this.isTouch == true) {
             return;
         }
@@ -338,7 +338,8 @@ class ChartBuilder {
         this._handleDragging(event.offsetX);
     }
 
-    _handleMouseOut(event) {
+    _handleMouseOut() {
+        this.isTouch = false;
         this.isDragging = false;
         this.actionType = ActionTypes.EMPTY;
     }
@@ -649,7 +650,6 @@ class ChartBuilder {
                 let height = this.chart.buttons.style.height;
                 let width = buttonWidth;
 
-                this.canvas.ctx.save();
                 this.canvas.ctx.lineWidth = 0.7;
                 this.canvas.ctx.strokeStyle = this.chart.buttons.style.color;
                 this.canvas.drawRoundedRect(x, y, width, height, 15);
@@ -684,8 +684,6 @@ class ChartBuilder {
                 this.canvas.ctx.fillStyle =
                     this.isNightMode == true ? this.chart.style.fontColorDarkMode : this.chart.style.fontColorLightMode;
                 this.canvas.ctx.fillText(name, circleX + 12, circleY + 4);
-
-                this.canvas.ctx.restore();
 
                 this.chart.buttons.items.push({ x: x, y: y, id: id, width: buttonWidth });
                 buttonCount++;
@@ -741,7 +739,6 @@ class ChartBuilder {
         } else {
             maxValueToUse = animatedMaxValue;
         }
-        //let maxValue = this._findMaxValue(0, this.chart.xAxis.originalValues.length - 1);
 
         // init data
         this.chart.xAxis.values = new Array();
