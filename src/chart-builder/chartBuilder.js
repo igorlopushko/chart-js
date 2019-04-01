@@ -34,10 +34,7 @@ class ChartBuilder {
         this.previousChartMaxValue = 0;
         this.previousMiniMapMaxValue = 0;
 
-        if (config != null && config.yLabelsDisplayCoef != null && config.minDisplayPositions != null) {
-            this.chart.axis.yLabels.displayCoef = config.yLabelsDisplayCoef;
-            this.miniMap.frame.minDisplayPositions = config.minDisplayPositions;
-        }
+        this._setConfigValues(config);
 
         canvas.addEventListener('mousedown', this);
         canvas.addEventListener('mouseup', this);
@@ -52,11 +49,12 @@ class ChartBuilder {
         this.render();
     }
 
+    // should be called each time component has to be re-rendered.
     render() {
         this.canvas.height = this.canvas.ref.height;
         this.canvas.width = this.canvas.ref.width;
 
-        this._setupCanvas();
+        this.canvas.setup();
 
         this._init();
         this._parseData();
@@ -64,41 +62,7 @@ class ChartBuilder {
         this._drawComponents();
     }
 
-    _calculateRatio() {
-        let ctx = this.canvas.ref.getContext('2d'),
-            dpr = window.devicePixelRatio || 1,
-            bsr =
-                ctx.webkitBackingStorePixelRatio ||
-                ctx.mozBackingStorePixelRatio ||
-                ctx.msBackingStorePixelRatio ||
-                ctx.oBackingStorePixelRatio ||
-                ctx.backingStorePixelRatio ||
-                1;
-        return dpr / bsr;
-    }
-
-    _setupCanvas() {
-        const ratio = this._calculateRatio();
-        this.canvas.ref.width = this.canvas.width * ratio;
-        this.canvas.ref.height = this.canvas.height * ratio;
-        this.canvas.ref.style.width = this.canvas.width + 'px';
-        this.canvas.ref.style.height = this.canvas.height + 'px';
-        this.canvas.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    }
-
-    _calculateData(maxValue, miniMapMaxValue) {
-        this._calculateChartData(maxValue);
-        this._calculateMiniMapData(miniMapMaxValue);
-    }
-    _drawComponents() {
-        this._clearCanvas();
-        this._drawMiniMapData();
-        this._drawMiniMapFrame();
-        this._drawChartData();
-        this._drawChartInfo();
-        this._drawButtons();
-    }
-
+    // call to switch from light to dark mode.
     swithcMode() {
         if (this.isNightMode == true) {
             this.isNightMode = false;
@@ -109,6 +73,62 @@ class ChartBuilder {
         this._calculateChartData(0);
         this._calculateMiniMapData(0);
         this._drawComponents();
+    }
+
+    // call when want to hide a column
+    hideColumn(columnId) {
+        if (this.chart.yAxis.columns.length == 1) {
+            return;
+        }
+        let index = this.columnsToDisplay.findIndex((id) => {
+            return id == columnId;
+        });
+        if (index != -1) {
+            this.columnsToDisplay.splice(index, 1);
+            this._init();
+            this._parseData();
+            this._animate(this.canvas.buttonAnimation);
+        }
+    }
+
+    // call when want show a column
+    showColumn(columnId) {
+        let index = this.columnsToDisplay.findIndex((id) => {
+            return id == columnId;
+        });
+        if (index == -1) {
+            this.columnsToDisplay.push(columnId);
+            this._init();
+            this._parseData();
+            this._animate(this.canvas.buttonAnimation);
+        }
+    }
+
+    _setConfigValues(config) {
+        if (config === null) {
+            return;
+        }
+
+        if (config.yLabelsDisplayCoef != null) {
+            this.chart.axis.yLabels.displayCoef = config.yLabelsDisplayCoef;
+        }
+
+        if (config.minDisplayPositions != null) {
+            this.miniMap.frame.minDisplayPositions = config.minDisplayPositions;
+        }
+    }
+
+    _calculateData(maxValue, miniMapMaxValue) {
+        this._calculateChartData(maxValue);
+        this._calculateMiniMapData(miniMapMaxValue);
+    }
+    _drawComponents() {
+        this.canvas.clear(this.isNightMode);
+        this._drawMiniMapData();
+        this._drawMiniMapFrame();
+        this._drawChartData();
+        this._drawChartInfo();
+        this._drawButtons();
     }
 
     _animate(animationSettings) {
@@ -156,33 +176,6 @@ class ChartBuilder {
         } else {
             this._calculateData(0, 0);
             this._drawComponents();
-        }
-    }
-
-    hideColumn(columnId) {
-        if (this.chart.yAxis.columns.length == 1) {
-            return;
-        }
-        let index = this.columnsToDisplay.findIndex((id) => {
-            return id == columnId;
-        });
-        if (index != -1) {
-            this.columnsToDisplay.splice(index, 1);
-            this._init();
-            this._parseData();
-            this._animate(this.canvas.buttonAnimation);
-        }
-    }
-
-    showColumn(columnId) {
-        let index = this.columnsToDisplay.findIndex((id) => {
-            return id == columnId;
-        });
-        if (index == -1) {
-            this.columnsToDisplay.push(columnId);
-            this._init();
-            this._parseData();
-            this._animate(this.canvas.buttonAnimation);
         }
     }
 
@@ -362,22 +355,6 @@ class ChartBuilder {
         this.miniMap.width = this.canvas.width;
     }
 
-    _clearCanvas() {
-        /*this.canvas.ctx.fillStyle =
-            this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.ctx.lightModeColor;
-        this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);*/
-        this.canvas.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        if (this.isNightMode == true) {
-            this.canvas.ctx.save();
-            this.canvas.ctx.fillStyle = this.canvas.style.darkModeColor;
-            this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.canvas.ctx.restore();
-        }
-        this.canvas.ctx.fillStyle =
-            this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
-        this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-
     _drawChartData() {
         // draw background rectangle to overlay minimap animation
         this.canvas.ctx.fillStyle =
@@ -518,7 +495,7 @@ class ChartBuilder {
         // draw header text
         let headerTextX = infoBoxX + this.chart.info.style.leftPadding;
         let headerTextY = infoBoxY + this.chart.info.style.topPadding;
-        this.canvas.ctx.font = this.chart.info.headerStyle.fontSize + ' ' + this.chart.style.fontFamily;
+        this.canvas.ctx.font = this.chart.info.headerStyle.fontSize + 'px ' + this.chart.style.fontFamily;
         this.canvas.ctx.fillStyle =
             this.isNightMode == true ? this.chart.style.fontColorDarkMode : this.chart.style.fontColorLightMode;
         this.canvas.ctx.fillText(headerText, headerTextX, headerTextY);
@@ -535,10 +512,10 @@ class ChartBuilder {
                 this.chart.info.valuesStyle.fontWeight +
                 ' ' +
                 this.chart.info.valuesStyle.fontSize +
-                ' ' +
+                'px ' +
                 this.chart.style.fontFamily;
             this.canvas.ctx.fillText(value, itemX, itemY);
-            this.canvas.ctx.font = this.chart.info.namesStyle.fontSize + ' ' + this.chart.style.fontFamily;
+            this.canvas.ctx.font = this.chart.info.namesStyle.fontSize + 'px ' + this.chart.style.fontFamily;
             this.canvas.ctx.fillText(element.name, itemX, itemY + this.chart.info.secondLineShift);
         });
     }

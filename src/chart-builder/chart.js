@@ -59,14 +59,14 @@ class Chart {
                 borderColorDarkMode: 'rgba(0, 0, 0, 1)',
             },
             headerStyle: {
-                fontSize: '12px',
+                fontSize: 12,
             },
             valuesStyle: {
-                fontSize: '12px',
+                fontSize: 12,
                 fontWeight: 'bold',
             },
             namesStyle: {
-                fontSize: '10px',
+                fontSize: 10,
             },
         };
         this.buttons = {

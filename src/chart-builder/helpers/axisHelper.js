@@ -145,10 +145,7 @@ class AxisHelper {
 
     _isNextMonth28(timestamp) {
         let date = this.dateHelper.convertToDate(timestamp);
-        if (date.getMonth() == 1) {
-            if (this._isLeapYear(date.getFullYear())) {
-                return false;
-            }
+        if (date.getMonth() == 1 && !this._isLeapYear(date.getFullYear())) {
             return true;
         }
         return false;
@@ -156,11 +153,8 @@ class AxisHelper {
 
     _isNextMonth29(timestamp) {
         let date = this.dateHelper.convertToDate(timestamp);
-        if (date.getMonth() == 1) {
-            if (this._isLeapYear(date.getFullYear())) {
-                return true;
-            }
-            return false;
+        if (date.getMonth() == 1 && this._isLeapYear(date.getFullYear())) {
+            return true;
         }
         return false;
     }
