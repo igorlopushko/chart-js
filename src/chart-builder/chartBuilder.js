@@ -176,7 +176,7 @@ class ChartBuilder {
         event.stopPropagation();
         switch (event.type) {
             case 'mousedown':
-                this._handleMouseDown(event);
+                this._handleMouseDown(event.offsetX, event.offsetY);
                 break;
             case 'mouseup':
                 this._handleMouseUp();
@@ -225,9 +225,7 @@ class ChartBuilder {
         }
     }
 
-    _handleMouseDown(e) {
-        let x = e.offsetX;
-        let y = e.offsetY;
+    _handleMouseDown(x, y) {
         if (this._isOverLeftDragLine(x, y)) {
             this.isDragging = true;
             this.drawInfo = false;
