@@ -77,9 +77,7 @@ class ChartBuilder {
         if (this.chart.yAxis.columns.length == 1) {
             return;
         }
-        let index = this.columnsToDisplay.findIndex((id) => {
-            return id == columnId;
-        });
+        let index = this._getArrayIndex(this.columnsToDisplay, columnId);
         if (index != -1) {
             this.columnsToDisplay.splice(index, 1);
             this._init();
@@ -90,9 +88,7 @@ class ChartBuilder {
 
     // call when want show a column
     showColumn(columnId) {
-        let index = this.columnsToDisplay.findIndex((id) => {
-            return id == columnId;
-        });
+        let index = this._getArrayIndex(this.columnsToDisplay, columnId);
         if (index == -1) {
             this.columnsToDisplay.push(columnId);
             this._init();
@@ -258,9 +254,7 @@ class ChartBuilder {
             this.canvas.ref.style.cursor = 'pointer';
             let id = this._getButtonId(x, y);
             if (id != null) {
-                let index = this.columnsToDisplay.findIndex((element) => {
-                    return element == id;
-                });
+                let index = this._getArrayIndex(this.columnsToDisplay, id);
                 if (index != -1) {
                     this.hideColumn(id);
                 } else {
@@ -632,9 +626,7 @@ class ChartBuilder {
             let column = this.data.columns[i];
             let id = column[0];
             let type = this.data.types[id];
-            let index = this.columnsToDisplay.findIndex((i) => {
-                return i == id;
-            });
+            let index = this._getArrayIndex(this.columnsToDisplay, id);
             let isHidden = index == -1;
             if (type.toLowerCase() == 'line') {
                 let name = this.data.names[id];
@@ -706,9 +698,7 @@ class ChartBuilder {
             };
         });
         this.data.columns.slice(1).forEach((column) => {
-            let index = this.columnsToDisplay.findIndex((id) => {
-                return id == column[0];
-            });
+            let index = this._getArrayIndex(this.columnsToDisplay, column[0]);
             if (index != -1) {
                 this.chart.yAxis.columns.push({
                     id: column[0],
@@ -829,11 +819,13 @@ class ChartBuilder {
             count
         );
         for (let i = 0; i < ticks.length; i++) {
-            let xIndex = this.chart.xAxis.values.findIndex((element, index) => {
-                if (element.originalValue == ticks[i]) {
-                    return true;
+            let xIndex = -1;
+            for (let j = 0; j < this.chart.xAxis.values.length; j++) {
+                if (this.chart.xAxis.values[j].name == ticks[i]) {
+                    xIndex = j;
+                    break;
                 }
-            });
+            }
             if (xIndex != -1 && xIndex < this.chart.xAxis.values.length) {
                 let xValue = 0;
                 if (i == 0) {
@@ -982,6 +974,15 @@ class ChartBuilder {
             return button.id;
         }
         return null;
+    }
+
+    _getArrayIndex(arr, value) {
+        for (var i = 0; i < arr.length; i++) {
+            if (arr[i] == value) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     _getClickedChartIndex() {
