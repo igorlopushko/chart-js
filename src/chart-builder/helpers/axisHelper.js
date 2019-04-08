@@ -17,9 +17,14 @@ class AxisHelper {
     }
 
     getAxisLabelsMultiplier(maxValue, tickCount) {
+        let log10 =
+            Math.log10 ||
+            function(x) {
+                return Math.log(x) * Math.LOG10E;
+            };
         let range = maxValue;
         let unroundedTickSize = range / (tickCount - 1);
-        let x = Math.ceil(Math.log10(unroundedTickSize) - 1);
+        let x = Math.ceil(log10(unroundedTickSize) - 1);
         let pow10x = Math.pow(10, x);
         return Math.ceil(unroundedTickSize / pow10x) * pow10x;
     }

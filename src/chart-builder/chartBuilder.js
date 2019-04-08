@@ -821,7 +821,7 @@ class ChartBuilder {
         for (let i = 0; i < ticks.length; i++) {
             let xIndex = -1;
             for (let j = 0; j < this.chart.xAxis.values.length; j++) {
-                if (this.chart.xAxis.values[j].name == ticks[i]) {
+                if (this.chart.xAxis.values[j].originalValue == ticks[i]) {
                     xIndex = j;
                     break;
                 }
@@ -951,25 +951,32 @@ class ChartBuilder {
     }
 
     _isOverButton(x, y) {
-        return this.chart.buttons.items.some((button) => {
-            return (
-                x >= button.x &&
-                x <= button.x + button.width &&
-                y >= button.y &&
-                y <= button.y + this.chart.buttons.style.height
-            );
-        });
+        for (let i = 0; i < this.chart.buttons.items.length; i++) {
+            if (
+                x >= this.chart.buttons.items[i].x &&
+                x <= this.chart.buttons.items[i].x + this.chart.buttons.items[i].width &&
+                y >= this.chart.buttons.items[i].y &&
+                y <= this.chart.buttons.items[i].y + this.chart.buttons.style.height
+            ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     _getButtonId(x, y) {
-        let button = this.chart.buttons.items.find((button) => {
-            return (
-                x >= button.x &&
-                x <= button.x + button.width &&
-                y >= button.y &&
-                y <= button.y + this.chart.buttons.style.height
-            );
-        });
+        let button = null;
+        for (let i = 0; i < this.chart.buttons.items.length; i++) {
+            if (
+                x >= this.chart.buttons.items[i].x &&
+                x <= this.chart.buttons.items[i].x + this.chart.buttons.items[i].width &&
+                y >= this.chart.buttons.items[i].y &&
+                y <= this.chart.buttons.items[i].y + this.chart.buttons.style.height
+            ) {
+                button = this.chart.buttons.items[i];
+                break;
+            }
+        }
         if (button != null) {
             return button.id;
         }
