@@ -1,4 +1,5 @@
 import ChartBuilder from './chart-builder/chartBuilder';
+import DataProvider from './api/dataProvider';
 
 let data = [
     {
@@ -3295,11 +3296,14 @@ let data = [
 
 let canvas1 = document.getElementById('canvas1');
 if (canvas1.getContext) {
-    let config1 = { yLabelsDisplayCoef: 12, minDisplayPositions: 15 };
-    let builder1 = new ChartBuilder(canvas1, data[0], config1);
-    document.getElementById('mode1').onclick = function() {
-        builder1.swithcMode();
-    };
+    let dataProvider = new DataProvider('http://localhost:5000');
+    let data1 = dataProvider.getChart1Overview(function(data) {
+        let config1 = { yLabelsDisplayCoef: 12, minDisplayPositions: 15 };
+        let builder1 = new ChartBuilder(canvas1, data, config1);
+        document.getElementById('mode1').onclick = function() {
+            builder1.swithcMode();
+        };
+    });
 }
 
 let canvas2 = document.getElementById('canvas2');
