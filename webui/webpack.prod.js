@@ -1,6 +1,7 @@
 import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import HtmlWebpackExternalsPlugin from 'html-webpack-externals-plugin';
+import CompressionPlugin from 'compression-webpack-plugin';
 
 export default [
     {
@@ -77,6 +78,7 @@ export default [
                     },
                 ],
             }),
+            new CompressionPlugin(),
         ],
         module: {
             rules: [
