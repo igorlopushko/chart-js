@@ -5,7 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta http-equiv="X-UA-Compatible" content="ie=edge" />
         <title>Chart-JS</title>
-        <script type="text/javascript" src="chart-builder.js"></script>
     </head>
     <body>
         <script type="text/javascript">
@@ -3308,10 +3307,14 @@
                     },
                 ];
 
+                let canvasWidth = $('.container').width();
+
                 (function(canvasId, switchBtnId, data) {
                     let canvas = document.getElementById(canvasId);
                     if (canvas.getContext) {
-                        let builder = new ChartBuilder.create(canvas, data);
+                        canvas.width = canvasWidth;
+                        let config = { yLabelsDisplayCoef: 12, minDisplayPositions: 15 };
+                        let builder = new ChartBuilder.create(canvas, data, config);
                         document.getElementById(switchBtnId).onclick = function() {
                             builder.swithcMode();
                         };
@@ -3321,7 +3324,9 @@
                 (function(canvasId, switchBtnId, data) {
                     let canvas = document.getElementById(canvasId);
                     if (canvas.getContext) {
-                        let builder = new ChartBuilder.create(canvas, data);
+                        canvas.width = canvasWidth;
+                        let config = { yLabelsDisplayCoef: 10, minDisplayPositions: 20 };
+                        let builder = new ChartBuilder.create(canvas, data, config);
                         document.getElementById(switchBtnId).onclick = function() {
                             builder.swithcMode();
                         };
@@ -3331,7 +3336,9 @@
                 (function(canvasId, switchBtnId, data) {
                     let canvas = document.getElementById(canvasId);
                     if (canvas.getContext) {
-                        let builder = new ChartBuilder.create(canvas, data);
+                        canvas.width = canvasWidth;
+                        let config = { yLabelsDisplayCoef: 10, minDisplayPositions: 15 };
+                        let builder = new ChartBuilder.create(canvas, data, config);
                         document.getElementById(switchBtnId).onclick = function() {
                             builder.swithcMode();
                         };
@@ -3341,7 +3348,9 @@
                 (function(canvasId, switchBtnId, data) {
                     let canvas = document.getElementById(canvasId);
                     if (canvas.getContext) {
-                        let builder = new ChartBuilder.create(canvas, data);
+                        canvas.width = canvasWidth;
+                        let config = { yLabelsDisplayCoef: 10, minDisplayPositions: 15 };
+                        let builder = new ChartBuilder.create(canvas, data, config);
                         document.getElementById(switchBtnId).onclick = function() {
                             builder.swithcMode();
                         };
@@ -3351,7 +3360,9 @@
                 (function(canvasId, switchBtnId, data) {
                     let canvas = document.getElementById(canvasId);
                     if (canvas.getContext) {
-                        let builder = new ChartBuilder.create(canvas, data);
+                        canvas.width = canvasWidth;
+                        let config = { yLabelsDisplayCoef: 10, minDisplayPositions: 30 };
+                        let builder = new ChartBuilder.create(canvas, data, config);
                         document.getElementById(switchBtnId).onclick = function() {
                             builder.swithcMode();
                         };
@@ -3360,25 +3371,80 @@
             });
         </script>
 
-        <div style="padding-bottom: 20px">
-            <canvas id="canvas1" width="500" height="450"></canvas>
-            <div><input type="button" value="Switch mode" id="mode1" class="btn btn-info" /></div>
-        </div>
-        <div style="padding-bottom: 20px">
-            <canvas id="canvas2" width="500" height="450"></canvas>
-            <div><input type="button" value="Switch mode" id="mode2" class="btn btn-info" /></div>
-        </div>
-        <div style="padding-bottom: 20px">
-            <canvas id="canvas3" width="500" height="450"></canvas>
-            <div><input type="button" value="Switch mode" id="mode3" class="btn btn-info" /></div>
-        </div>
-        <div style="padding-bottom: 20px">
-            <canvas id="canvas4" width="500" height="450"></canvas>
-            <div><input type="button" value="Switch mode" id="mode4" class="btn btn-info" /></div>
-        </div>
-        <div style="padding-bottom: 20px">
-            <canvas id="canvas5" width="500" height="450"></canvas>
-            <div><input type="button" value="Switch mode" id="mode5" class="btn btn-info" /></div>
-        </div>
+        <nav class="navbar fixed-top navbar-expand-md navbar-light bg-light">
+            <div class="container">
+                <a class="navbar-brand" href="#">Chart JS</a>
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-toggle="collapse"
+                    data-target="#navbarCollapse"
+                    aria-controls="navbarCollapse"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="index.html"
+                                >Home
+                                <span class="sr-only">(current)</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="about.html">About</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <main role="main" class="container">
+            <div class="row">
+                <div class="col">
+                    <div style="padding-top: 80px; background-color: white!important; margin: auto">
+                        <div>
+                            <canvas id="canvas1" height="510"></canvas>
+                            <div>
+                                <input type="button" value="Switch mode" id="mode1" class="btn btn-info" />
+                            </div>
+                        </div>
+                        <div style="padding-top: 80px">
+                            <canvas id="canvas2" height="510"></canvas>
+                            <div>
+                                <input type="button" value="Switch mode" id="mode2" class="btn btn-info" />
+                            </div>
+                        </div>
+                        <div style="padding-top: 80px">
+                            <canvas id="canvas3" height="510"></canvas>
+                            <div>
+                                <input type="button" value="Switch mode" id="mode3" class="btn btn-info" />
+                            </div>
+                        </div>
+                        <div style="padding-top: 80px">
+                            <canvas id="canvas4" height="510"></canvas>
+                            <div>
+                                <input type="button" value="Switch mode" id="mode4" class="btn btn-info" />
+                            </div>
+                        </div>
+                        <div style="padding-top: 80px">
+                            <canvas id="canvas5" height="510"></canvas>
+                            <div>
+                                <input type="button" value="Switch mode" id="mode5" class="btn btn-info" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="container mt-4">
+            <div class="row">
+                <div class="col">
+                    <p class="text-center">Design by <a href="mailto:lopushko.igor@gmail.com">Igor Lopushko</a></p>
+                </div>
+            </div>
+        </footer>
     </body>
 </html>
