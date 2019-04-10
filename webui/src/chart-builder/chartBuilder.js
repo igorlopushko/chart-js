@@ -13,16 +13,7 @@ class ChartBuilder {
         this.miniMap = new MiniMap();
         this.dateHelper = new DateHelper();
         this.axisHelper = new AxisHelper();
-
-        // get column ids to display
         this.columnsToDisplay = new Array();
-        this.data.columns.forEach((element) => {
-            this.columnsToDisplay.push(element[0]);
-        });
-
-        this.chart.displayStartIndex = 0;
-        // -1 because of array indexation, and -1 because first element is not a value = -2
-        this.chart.displayEndIndex = this.data.columns[0].length - 2;
 
         /* internal veriables */
         this.isDragging = false;
@@ -33,6 +24,7 @@ class ChartBuilder {
         this.isNightMode = false;
         this.previousChartMaxValue = 0;
         this.previousMiniMapMaxValue = 0;
+        this.clickedTimestamp = 0;
 
         this._setConfigValues(config);
 
@@ -46,6 +38,7 @@ class ChartBuilder {
         this.canvas.ref.addEventListener('touchcancel', this);
         this.canvas.ref.addEventListener('touchmove', this);
 
+        this._init();
         this.render();
     }
 
@@ -53,7 +46,7 @@ class ChartBuilder {
     render() {
         this.canvas.setup();
 
-        this._init();
+        this._reset();
         this._parseData();
         this._calculateData(0, 0);
         this._drawComponents();
@@ -80,7 +73,7 @@ class ChartBuilder {
         let index = this._getArrayIndex(this.columnsToDisplay, columnId);
         if (index != -1) {
             this.columnsToDisplay.splice(index, 1);
-            this._init();
+            this._reset();
             this._parseData();
             this._animate(this.canvas.buttonAnimation);
         }
@@ -91,7 +84,7 @@ class ChartBuilder {
         let index = this._getArrayIndex(this.columnsToDisplay, columnId);
         if (index == -1) {
             this.columnsToDisplay.push(columnId);
-            this._init();
+            this._reset();
             this._parseData();
             this._animate(this.canvas.buttonAnimation);
         }
@@ -242,6 +235,12 @@ class ChartBuilder {
             this.actionType = ActionTypes.DRAG_FRAME;
             this.canvas.ref.style.cursor = 'move';
             this.clickX = x;
+        } else if (this._isOverInfoBox(x, y)) {
+            // load new data
+            // zoom in chart
+        } else if (this._isOverZoomButton(x, y)) {
+            // load new data
+            // zoom in out
         } else if (this._isOverChart(x, y)) {
             this.clickXInfo = x;
             this.drawInfo = true;
@@ -319,9 +318,7 @@ class ChartBuilder {
             this.canvas.ref.style.cursor = 'col-resize';
         } else if (this._isOverDragFrame(x, y)) {
             this.canvas.ref.style.cursor = 'move';
-        } else if (this._isOverChart(x, y)) {
-            this.canvas.ref.style.cursor = 'pointer';
-        } else if (this._isOverButton(x, y)) {
+        } else if (this._isOverChart(x, y) || this._isOverButton(x, y) || this._isOverInfoBox(x, y)) {
             this.canvas.ref.style.cursor = 'pointer';
         } else {
             this.canvas.ref.style.cursor = 'default';
@@ -337,6 +334,18 @@ class ChartBuilder {
     }
 
     _init() {
+        // get column ids to display. all columns in the begining
+        this.data.columns.forEach((element) => {
+            this.columnsToDisplay.push(element[0]);
+        });
+
+        // set initial indexes: 0 and last elements
+        this.chart.displayStartIndex = 0;
+        // -1 because of array indexation, and -1 because first element is not a value = -2
+        this.chart.displayEndIndex = this.data.columns[0].length - 2;
+    }
+
+    _reset() {
         this.chart.xAxis.values = [];
         this.chart.xAxis.originalValues = [];
         this.chart.yAxis.columns = [];
@@ -410,6 +419,8 @@ class ChartBuilder {
         if (infoIndex == -1) {
             return;
         }
+        // set X clicked value
+        this._setClickedTimestamp(infoIndex);
         const infoLineTopPadding = 20;
         let chartX = this.chart.xAxis.values[infoIndex].scaledValue;
 
@@ -453,17 +464,16 @@ class ChartBuilder {
         });
         let maxContentLegth = valuesLength > headerText.length ? valuesLength : headerText.length;
 
-        let infoBoxWidth = maxContentLegth * this.chart.fontMultiplier + this.chart.info.style.rightPadding;
-        let infoBoxX = 0;
-        if (chartX - infoBoxWidth / 2 + infoBoxWidth >= this.canvas.width) {
-            infoBoxX = this.canvas.width - infoBoxWidth - this.canvas.style.rightPadding;
-        } else if (chartX - infoBoxWidth / 2 <= 0) {
-            infoBoxX = this.canvas.style.leftPadding;
+        this.chart.info.width = maxContentLegth * this.chart.fontMultiplier + this.chart.info.style.rightPadding;
+        if (chartX - this.chart.info.width / 2 + this.chart.info.width >= this.canvas.width) {
+            this.chart.info.x = this.canvas.width - this.chart.info.width - this.canvas.style.rightPadding;
+        } else if (chartX - this.chart.info.width / 2 <= 0) {
+            this.chart.info.x = this.canvas.style.leftPadding;
         } else {
-            infoBoxX = chartX - infoBoxWidth / 2;
+            this.chart.info.x = chartX - this.chart.info.width / 2;
         }
 
-        const infoBoxY = this.chart.info.style.topShift;
+        this.chart.info.y = this.chart.info.style.topShift;
         const infoBoxCornersRadius = 10;
 
         this.canvas.ctx.save();
@@ -476,18 +486,30 @@ class ChartBuilder {
             this.isNightMode == true
                 ? this.chart.info.style.borderColorDarkMode
                 : this.chart.info.style.borderColorLightMode;
-        this.canvas.drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, this.chart.info.height, infoBoxCornersRadius);
+        this.canvas.drawRoundedRect(
+            this.chart.info.x,
+            this.chart.info.y,
+            this.chart.info.width,
+            this.chart.info.height,
+            infoBoxCornersRadius
+        );
         this.canvas.ctx.stroke();
         this.canvas.ctx.restore();
 
         this.canvas.ctx.fillStyle =
             this.isNightMode == true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
-        this.canvas.drawRoundedRect(infoBoxX, infoBoxY, infoBoxWidth, this.chart.info.height, infoBoxCornersRadius);
+        this.canvas.drawRoundedRect(
+            this.chart.info.x,
+            this.chart.info.y,
+            this.chart.info.width,
+            this.chart.info.height,
+            infoBoxCornersRadius
+        );
         this.canvas.ctx.fill();
 
         // draw header text
-        let headerTextX = infoBoxX + this.chart.info.style.leftPadding;
-        let headerTextY = infoBoxY + this.chart.info.style.topPadding;
+        let headerTextX = this.chart.info.x + this.chart.info.style.leftPadding;
+        let headerTextY = this.chart.info.y + this.chart.info.style.topPadding;
         this.canvas.ctx.font = this.chart.info.headerStyle.fontSize + 'px ' + this.chart.style.fontFamily;
         this.canvas.ctx.fillStyle =
             this.isNightMode == true ? this.chart.style.fontColorDarkMode : this.chart.style.fontColorLightMode;
@@ -497,9 +519,9 @@ class ChartBuilder {
         let columnShift = 0;
         this.chart.yAxis.columns.forEach((element) => {
             let value = element.values[infoIndex].originalValue;
-            let itemX = infoBoxX + this.chart.info.style.leftPadding + columnShift;
+            let itemX = this.chart.info.x + this.chart.info.style.leftPadding + columnShift;
             columnShift = columnShift + value.toString().length * this.chart.fontMultiplier;
-            let itemY = infoBoxY + this.chart.info.fistLineShift;
+            let itemY = this.chart.info.y + this.chart.info.fistLineShift;
             this.canvas.ctx.fillStyle = element.color;
             this.canvas.ctx.font =
                 this.chart.info.valuesStyle.fontWeight +
@@ -935,6 +957,19 @@ class ChartBuilder {
         );
     }
 
+    _isOverInfoBox(x, y) {
+        return (
+            x >= this.chart.info.x &&
+            x <= this.chart.info.x + this.chart.info.width &&
+            y >= this.chart.info.y &&
+            y <= this.chart.info.y + this.chart.info.height
+        );
+    }
+
+    _isOverZoomButton(x, y) {
+        return false;
+    }
+
     _isOverChart(x, y) {
         return (
             x >= 0 &&
@@ -988,6 +1023,12 @@ class ChartBuilder {
             }
         }
         return -1;
+    }
+
+    _setClickedTimestamp(index) {
+        if (index < this.chart.xAxis.values.length) {
+            this.clickedTimestamp = this.chart.xAxis.values[index];
+        }
     }
 
     _getClickedChartIndex() {

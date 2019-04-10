@@ -46,7 +46,10 @@ class Chart {
             fontColorDarkMode: 'rgba(255, 255, 255, 1)',
         };
         this.info = {
+            x: 0,
+            y: 0,
             height: 65,
+            width: 0,
             fistLineShift: 40,
             secondLineShift: 12,
             fontMultiplier: 9,
