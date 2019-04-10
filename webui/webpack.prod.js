@@ -14,6 +14,9 @@ export default [
             libraryTarget: 'var',
             library: 'DataProvider',
         },
+        externals: {
+            jquery: 'jQuery',
+        },
     },
     {
         mode: 'production',
