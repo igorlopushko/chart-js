@@ -3296,10 +3296,10 @@ let data = [
 
 let canvas1 = document.getElementById('canvas1');
 if (canvas1.getContext) {
-    let dataProvider = new DataProvider('http://localhost:5000');
-    let data1 = dataProvider.getChart1Overview(function(data) {
-        let config1 = { yLabelsDisplayCoef: 12, minDisplayPositions: 15 };
-        let builder1 = new ChartBuilder(canvas1, data, config1);
+    let dataProvider = new DataProvider('http://localhost:5000/api/chart1', 'http://localhost:5000/api/chart1/');
+    dataProvider.getData(function(data) {
+        let config1 = { yLabelsDisplayCoef: 12, minDisplayPositions: 15, title: 'Followers', enableZoom: true };
+        let builder1 = new ChartBuilder(canvas1, data, config1, dataProvider);
         document.getElementById('mode1').onclick = function() {
             builder1.swithcMode();
         };

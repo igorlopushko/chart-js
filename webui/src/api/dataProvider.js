@@ -1,25 +1,29 @@
 import jQuery from 'jquery';
 
 class DataProvider {
-    constructor(webApiUrl) {
-        this.webApiUrl = webApiUrl;
+    constructor(getDataApiUrl, getSpecificDataApiUrl) {
+        this.getDataApiUrl = getDataApiUrl;
+        this.getSpecificDataApiUrl = getSpecificDataApiUrl;
     }
 
-    getChart1Overview(callback) {
-        let url = this.webApiUrl + '/api/Chart1';
-        return this._getData(url, callback);
-    }
-
-    getChart1Date(timstamp, callback) {
-        let url = this.webApiUrl + '/api/Chart1/' + timstamp;
-        return this._getData(url, callback);
-    }
-
-    _getData(url, callback) {
+    getData(callback) {
         jQuery.ajax({
             method: 'GET',
             dataType: 'json',
-            url: url,
+            url: this.getDataApiUrl,
+            async: false,
+            context: document.body,
+            success: function(data) {
+                callback(data);
+            },
+        });
+    }
+
+    getSpecificData(timstamp, callback) {
+        jQuery.ajax({
+            method: 'GET',
+            dataType: 'json',
+            url: this.getSpecificDataApiUrl + timstamp,
             async: false,
             context: document.body,
             success: function(data) {
