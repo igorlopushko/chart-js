@@ -33,6 +33,7 @@ namespace chart_js_dataprovider
                 builder =>
                 {
                     builder.WithOrigins("http://localhost:3000",
+                                        "http://192.168.1.38:3000",
                                         "https://chart-js.azurewebsites.net/")
                                         .AllowAnyHeader()
                                         .AllowAnyMethod();

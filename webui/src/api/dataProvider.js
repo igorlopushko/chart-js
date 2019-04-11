@@ -11,7 +11,7 @@ class DataProvider {
             method: 'GET',
             dataType: 'json',
             url: this.getDataApiUrl,
-            async: false,
+            async: true,
             context: document.body,
             success: function(data) {
                 callback(data);
@@ -24,7 +24,7 @@ class DataProvider {
             method: 'GET',
             dataType: 'json',
             url: this.getSpecificDataApiUrl + timstamp,
-            async: false,
+            async: true,
             context: document.body,
             success: function(data) {
                 callback(data);

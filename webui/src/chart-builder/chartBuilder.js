@@ -227,7 +227,7 @@ class ChartBuilder {
 
     _handleTouch(chartData, miniMapData, event) {
         this.isTouch = true;
-        event.preventDefault();
+        //event.preventDefault();
         if (event.touches.length > 1 || (event.type == 'touchend' && event.touches.length > 0)) {
             return;
         }
@@ -272,7 +272,7 @@ class ChartBuilder {
             this.canvas.ref.style.cursor = 'move';
             this.clickMiniMapX = x;
         } else if (this._isOverInfoBox(x, y)) {
-            if (this.clickedTimestamp != 0 && this.enableZoom === true) {
+            if (this.clickedTimestamp != 0 && this.enableZoom === true && this.zoomIn == false) {
                 let that = this;
                 this.dataPrivider.getSpecificData(this.clickedTimestamp, function(data) {
                     that.zoomIn = true;
