@@ -24,6 +24,7 @@ class ChartData {
         };
         this.displayStartIndex = 0;
         this.displayEndIndex = 0;
+        this.previousMaxValue = 0;
     }
 }
 
