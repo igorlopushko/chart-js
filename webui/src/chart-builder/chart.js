@@ -4,7 +4,15 @@ class Chart {
     constructor() {
         this.header = {
             title: '',
-            height: 20,
+            height: 25,
+            style: {
+                titleFontSize: 16,
+                titleTopPadding: 16,
+                datesRangeFontSize: 14,
+                datesRangeTopPadding: 18,
+                lightModeFontColor: 'rgba(0, 0 , 0, 1)',
+                darkModeFontColor: 'rgba(255, 255 , 255, 1)',
+            },
         };
 
         this.data = new ChartData();

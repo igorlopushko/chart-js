@@ -56,7 +56,7 @@ class ChartBuilder {
 
     // call to switch from light to dark mode.
     swithcMode() {
-        if (this.isNightMode == true) {
+        if (this.isNightMode === true) {
             this.isNightMode = false;
         } else {
             this.isNightMode = true;
@@ -128,6 +128,10 @@ class ChartBuilder {
         if (config.enableZoom != null) {
             this.enableZoom = config.enableZoom;
         }
+
+        if (config.title != null) {
+            this.chart.header.title = config.title;
+        }
     }
 
     _calculateData(chartData, miniMapData, chartMaxValue, miniMapMaxValue) {
@@ -139,6 +143,8 @@ class ChartBuilder {
         this.canvas.clear(this.isNightMode);
         this._drawMiniMapData(miniMapData);
         this._drawMiniMapFrame(miniMapData, chartData.displayStartIndex, chartData.displayEndIndex);
+        this._clearChart();
+        this._drawChartHeader(chartData);
         this._drawChartData(chartData);
         this._drawChartInfo(chartData);
         this._drawButtons();
@@ -272,7 +278,7 @@ class ChartBuilder {
             this.canvas.ref.style.cursor = 'move';
             this.clickMiniMapX = x;
         } else if (this._isOverInfoBox(x, y)) {
-            if (this.clickedTimestamp != 0 && this.enableZoom === true && this.zoomIn == false) {
+            if (this.clickedTimestamp != 0 && this.enableZoom === true && this.zoomIn === false) {
                 let that = this;
                 this.dataPrivider.getSpecificData(this.clickedTimestamp, function(data) {
                     that.zoomIn = true;
@@ -408,7 +414,7 @@ class ChartBuilder {
         this.miniMap.width = this.canvas.width;
     }
 
-    _drawChartData(data) {
+    _clearChart() {
         // draw background rectangle to overlay minimap animation
         this.canvas.ctx.fillStyle =
             this.isNightMode === true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
@@ -418,10 +424,59 @@ class ChartBuilder {
             this.canvas.width,
             this.canvas.height - this.miniMap.height - this.chart.buttons.height - this.miniMap.style.border.width
         );
+    }
 
+    _drawChartHeader(data) {
+        // draw title
+        this.canvas.ctx.font = this.chart.header.style.titleFontSize + 'px ' + this.chart.style.fontFamily;
+        this.canvas.ctx.fillStyle =
+            this.isNightMode === true
+                ? this.chart.header.style.darkModeFontColor
+                : this.chart.header.style.lightModeFontColor;
+        this.canvas.ctx.fillText(
+            this.chart.header.title,
+            this.canvas.style.leftPadding,
+            this.chart.header.style.titleTopPadding
+        );
+
+        // draw dates range
+        this.canvas.ctx.font = this.chart.header.style.datesRangeFontSize + 'px ' + this.chart.style.fontFamily;
+        this.canvas.ctx.moveTo(
+            this.canvas.width - this.canvas.style.rightPadding,
+            this.chart.header.style.datesRangeTopPadding
+        );
+        this.canvas.ctx.textAlign = 'end';
+        let startDateTimestamp = this._getCurrentChartDataSet().xAxis.values[
+            this._getCurrentChartDataSet().displayStartIndex
+        ].originalValue;
+        let endDateTimestamp = this._getCurrentChartDataSet().xAxis.values[
+            this._getCurrentChartDataSet().displayEndIndex
+        ].originalValue;
+        let startDate = this.dateHelper.convertToDate(startDateTimestamp);
+        let endDate = this.dateHelper.convertToDate(endDateTimestamp);
+
+        this.canvas.ctx.fillText(
+            startDate.getDate() +
+                ' ' +
+                this.dateHelper.getMonthName(startDate.getMonth()) +
+                ' ' +
+                startDate.getFullYear() +
+                ' - ' +
+                endDate.getDate() +
+                ' ' +
+                this.dateHelper.getMonthName(endDate.getMonth()) +
+                ' ' +
+                endDate.getFullYear(),
+            this.canvas.width - this.canvas.style.rightPadding,
+            this.chart.header.style.datesRangeTopPadding
+        );
+    }
+
+    _drawChartData(data) {
         // draw axis grid
         this.canvas.ctx.lineWidth = this.chart.style.axis.gridLineWidth;
         this.canvas.ctx.font = this.chart.style.axis.fontSize + 'px ' + this.chart.style.fontFamily;
+        this.canvas.ctx.textAlign = 'start';
         data.axis.grid.values.forEach((element) => {
             this.canvas.ctx.beginPath();
             this.canvas.ctx.strokeStyle =
@@ -463,7 +518,7 @@ class ChartBuilder {
 
     _drawChartInfo(data) {
         // get clicked index
-        if (this.drawInfoBox == false) {
+        if (this.drawInfoBox === false) {
             return;
         }
         let infoIndex = this._getClickedChartIndex(data);
@@ -816,7 +871,7 @@ class ChartBuilder {
                 this.miniMap.height -
                 this.chart.style.axis.bottomPadding -
                 this.chart.buttons.height) /
-            (this.canvas.height + this.chart.style.axis.topPadding);
+            (this.canvas.height + this.chart.style.axis.topPadding + this.chart.header.height);
 
         // calculate X values
         let index = 0;
