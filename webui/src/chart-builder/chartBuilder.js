@@ -144,8 +144,8 @@ class ChartBuilder {
         this._drawMiniMapData(miniMapData);
         this._drawMiniMapFrame(miniMapData, chartData.displayStartIndex, chartData.displayEndIndex);
         this._clearChart();
-        this._drawChartHeader(chartData);
         this._drawChartData(chartData);
+        this._drawChartHeader(chartData);
         this._drawChartInfo(chartData);
         this._drawButtons();
     }
@@ -427,6 +427,9 @@ class ChartBuilder {
     }
 
     _drawChartHeader(data) {
+        this.canvas.ctx.fillStyle =
+            this.isNightMode === true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
+        this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.chart.header.height - 1);
         // draw title
         this.canvas.ctx.font = this.chart.header.style.titleFontSize + 'px ' + this.chart.style.fontFamily;
         this.canvas.ctx.fillStyle =
@@ -446,11 +449,9 @@ class ChartBuilder {
             this.chart.header.style.datesRangeTopPadding
         );
         this.canvas.ctx.textAlign = 'end';
-        let startDateTimestamp = this._getCurrentChartDataSet().xAxis.values[
-            this._getCurrentChartDataSet().displayStartIndex
-        ].originalValue;
+        let startDateTimestamp = this._getCurrentChartDataSet().xAxis.values[0].originalValue;
         let endDateTimestamp = this._getCurrentChartDataSet().xAxis.values[
-            this._getCurrentChartDataSet().displayEndIndex
+            this._getCurrentChartDataSet().xAxis.values.length - 1
         ].originalValue;
         let startDate = this.dateHelper.convertToDate(startDateTimestamp);
         let endDate = this.dateHelper.convertToDate(endDateTimestamp);
@@ -470,13 +471,13 @@ class ChartBuilder {
             this.canvas.width - this.canvas.style.rightPadding,
             this.chart.header.style.datesRangeTopPadding
         );
+        this.canvas.ctx.textAlign = 'start';
     }
 
     _drawChartData(data) {
         // draw axis grid
         this.canvas.ctx.lineWidth = this.chart.style.axis.gridLineWidth;
         this.canvas.ctx.font = this.chart.style.axis.fontSize + 'px ' + this.chart.style.fontFamily;
-        this.canvas.ctx.textAlign = 'start';
         data.axis.grid.values.forEach((element) => {
             this.canvas.ctx.beginPath();
             this.canvas.ctx.strokeStyle =
@@ -864,15 +865,6 @@ class ChartBuilder {
         data.xAxis.scaleFactor = this.canvas.width / (data.displayEndIndex - data.displayStartIndex);
         data.yAxis.scaleFactor = this.canvas.height / maxValueToUse;
 
-        // get minimap scale factor to multiply Y values
-        // shifts all values up to free space for minimap
-        let miniMapScaleShift =
-            (this.canvas.height -
-                this.miniMap.height -
-                this.chart.style.axis.bottomPadding -
-                this.chart.buttons.height) /
-            (this.canvas.height + this.chart.style.axis.topPadding + this.chart.header.height);
-
         // calculate X values
         let index = 0;
         for (let i = data.displayStartIndex; i <= data.displayEndIndex; i++) {
@@ -886,13 +878,7 @@ class ChartBuilder {
         // calculate Y values
         data.yAxis.columns.forEach((column) => {
             for (let i = data.displayStartIndex; i <= data.displayEndIndex; i++) {
-                let scaledY = column.originalValues[i] * data.yAxis.scaleFactor * miniMapScaleShift;
-                let y =
-                    this.canvas.height -
-                    scaledY -
-                    this.miniMap.height -
-                    this.chart.style.axis.bottomPadding -
-                    this.chart.buttons.height;
+                let y = this._scaleYValueAndGetWithComponentsShift(column.originalValues[i], data.yAxis.scaleFactor);
                 column.values.push({
                     scaledValue: y,
                     originalValue: column.originalValues[i],
@@ -909,37 +895,31 @@ class ChartBuilder {
         let yMultiplier = this.axisHelper.getAxisLabelsMultiplier(maxValueToUse, data.axis.yLabels.displayCoef);
         for (let i = 0; i < data.axis.yLabels.displayCoef; i++) {
             let value = Math.round(yMultiplier * i);
-            let scaledValue = value * data.yAxis.scaleFactor;
-            let yValue =
-                this.canvas.height -
-                scaledValue -
-                this.miniMap.height -
-                this.chart.style.axis.bottomPadding -
-                this.chart.buttons.height;
-            if (yValue > this.chart.style.axis.fontSize + 1) {
+            let y = this._scaleYValueAndGetWithComponentsShift(value, data.yAxis.scaleFactor);
+            if (y > this.chart.style.axis.fontSize + 1) {
                 data.axis.yLabels.values.push({
                     text: value,
                     x: this.canvas.style.leftPadding,
-                    y: yValue - this.chart.style.axis.textBottomPadding,
+                    y: y - this.chart.style.axis.textBottomPadding,
                 });
                 data.axis.grid.values.push({
                     x1: this.canvas.style.leftPadding,
-                    y1: yValue,
+                    y1: y,
                     x2: this.canvas.width - this.canvas.style.rightPadding,
-                    y2: yValue,
+                    y2: y,
                 });
             }
         }
 
         // calculate X axis labels
-        let count = Math.ceil(
+        let pixelRange = Math.ceil(
             (this.canvas.width - this.canvas.style.leftPadding - this.canvas.style.rightPadding) /
                 this.chart.style.axis.textLabelPlaceHolder
         );
         let ticks = this.axisHelper.getDateIncrementsForAxis(
             data.xAxis.originalValues[data.displayStartIndex],
             data.xAxis.originalValues[data.displayEndIndex],
-            count
+            pixelRange
         );
         for (let i = 0; i < ticks.length; i++) {
             let xIndex = -1;
@@ -977,6 +957,26 @@ class ChartBuilder {
                 });
             }
         }
+    }
+
+    _scaleYValueAndGetWithComponentsShift(value, scaleFactor) {
+        // get minimap scale factor to multiply Y values
+        // shifts all values up to free space for minimap
+        let miniMapScaleShift =
+            (this.canvas.height -
+                this.miniMap.height -
+                this.chart.style.axis.bottomPadding -
+                this.chart.buttons.height) /
+            (this.canvas.height + this.chart.style.axis.topPadding + this.chart.header.height);
+
+        let scaledY = value * scaleFactor * miniMapScaleShift;
+        return (
+            this.canvas.height -
+            scaledY -
+            this.miniMap.height -
+            this.chart.style.axis.bottomPadding -
+            this.chart.buttons.height
+        );
     }
 
     _calculateMiniMapData(animatedMaxValue, chartData, miniMapData) {
