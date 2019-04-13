@@ -18,6 +18,7 @@ class ChartBuilder {
         this.columnsToDisplay = new Array();
 
         /* internal veriables */
+        this.isTouch = false;
         this.isDragging = false;
         this.enableZoom = false;
         this.drawInfoBox = false;
@@ -207,6 +208,7 @@ class ChartBuilder {
         switch (event.type) {
             case 'mousedown':
                 this._handleMouseDown(
+                    event,
                     this._getCurrentChartDataSet(),
                     this._getCurrentMiniMapDataSet(),
                     event.offsetX,
@@ -233,7 +235,6 @@ class ChartBuilder {
 
     _handleTouch(chartData, miniMapData, event) {
         this.isTouch = true;
-        //event.preventDefault();
         if (event.touches.length > 1 || (event.type == 'touchend' && event.touches.length > 0)) {
             return;
         }
@@ -244,6 +245,7 @@ class ChartBuilder {
             case 'touchstart':
                 touch = event.touches[0];
                 this._handleMouseDown(
+                    event,
                     chartData,
                     miniMapData,
                     touch.pageX - this.canvas.getOffsetLeft(this.canvas.ref),
@@ -260,7 +262,7 @@ class ChartBuilder {
         }
     }
 
-    _handleMouseDown(chartData, miniMapData, x, y) {
+    _handleMouseDown(event, chartData, miniMapData, x, y) {
         if (this._isOverLeftDragLine(miniMapData, x, y)) {
             this.isDragging = true;
             this.drawInfoBox = false;
@@ -300,6 +302,7 @@ class ChartBuilder {
             this._calculateMiniMapData(0, chartData, miniMapData);
             this._drawComponents(chartData, miniMapData);
         } else if (this._isOverButton(x, y)) {
+            event.preventDefault();
             this.canvas.ref.style.cursor = 'pointer';
             let id = this._getButtonId(x, y);
             if (id != null) {
@@ -756,7 +759,36 @@ class ChartBuilder {
         data.frame.rightDragLine.x = Math.round(data.xAxis.values[displayEndIndex]) - this.miniMap.style.border.width;
         data.frame.rightDragLine.y = miniMapY;
 
+        // draw drag tick lines
+        this.canvas.ctx.lineWidth = 2;
+        this.canvas.ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+        this.canvas.ctx.beginPath();
+        this.canvas.ctx.moveTo(
+            data.frame.leftDragLine.x + Math.floor(this.miniMap.style.dragLineWidth / 2) - 0.5,
+            data.frame.leftDragLine.y + this.miniMap.height / 2 - 6
+        );
+        this.canvas.ctx.lineTo(
+            data.frame.leftDragLine.x + Math.floor(this.miniMap.style.dragLineWidth / 2) - 0.5,
+            data.frame.leftDragLine.y + this.miniMap.height / 2 + 6
+        );
+        this.canvas.ctx.stroke();
+
+        this.canvas.ctx.beginPath();
+        this.canvas.ctx.moveTo(
+            data.frame.rightDragLine.x - 0.7,
+            data.frame.rightDragLine.y + this.miniMap.height / 2 - 6
+        );
+        this.canvas.ctx.lineTo(
+            data.frame.rightDragLine.x - 0.7,
+            data.frame.rightDragLine.y + this.miniMap.height / 2 + 6
+        );
+        this.canvas.ctx.stroke();
+
         // top line
+        this.canvas.ctx.strokeStyle =
+            this.isNightMode === true
+                ? this.miniMap.style.border.darkModeColor
+                : this.miniMap.style.border.lightModeColor;
         this.canvas.ctx.lineWidth = this.miniMap.style.border.width;
         this.canvas.ctx.beginPath();
         this.canvas.ctx.moveTo(miniMapX - 0.5, miniMapY - this.miniMap.style.border.width / 2);
