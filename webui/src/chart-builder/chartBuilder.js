@@ -145,7 +145,7 @@ class ChartBuilder {
         this._drawMiniMapFrame(miniMapData, chartData.displayStartIndex, chartData.displayEndIndex);
         this._clearChart();
         this._drawChartData(chartData);
-        this._drawChartHeader(chartData);
+        this._drawChartHeader();
         this._drawChartInfo(chartData);
         this._drawButtons();
     }
@@ -426,7 +426,7 @@ class ChartBuilder {
         );
     }
 
-    _drawChartHeader(data) {
+    _drawChartHeader() {
         this.canvas.ctx.fillStyle =
             this.isNightMode === true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
         this.canvas.ctx.fillRect(0, 0, this.canvas.width, this.chart.header.height - 1);
@@ -528,14 +528,13 @@ class ChartBuilder {
         }
         // set X clicked value
         this._setClickedTimestamp(infoIndex, data);
-        const infoLineTopPadding = 20;
         let chartX = data.xAxis.values[infoIndex].scaledValue;
 
         // draw info line
         this.canvas.ctx.lineWidth = 1;
         this.canvas.ctx.strokeStyle = this.chart.info.style.color;
         this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(chartX, infoLineTopPadding);
+        this.canvas.ctx.moveTo(chartX, this.chart.header.height);
         this.canvas.ctx.lineTo(
             chartX,
             this.canvas.height - this.miniMap.height - this.chart.style.axis.bottomPadding - this.chart.buttons.height
@@ -556,33 +555,54 @@ class ChartBuilder {
             this.canvas.ctx.fill();
         });
 
+        /*----------- draw info box ----------*/
         let date = this.dateHelper.convertToDate(data.xAxis.values[infoIndex].originalValue);
         let headerText =
             this.dateHelper.getDayShortName(date.getDay()) +
             ', ' +
+            date.getDate() +
+            ' ' +
             this.dateHelper.getMonthShortName(date.getMonth()) +
             ' ' +
-            date.getDate();
+            date.getFullYear();
+        let headerWidth = this.canvas.ctx.measureText(headerText).width;
+        let nameValueLengths = new Array();
 
-        /*----------- draw info box ----------*/
-        let valuesLength = 0;
+        // find all name/value row length
         data.yAxis.columns.forEach((element) => {
-            valuesLength += element.values[infoIndex].originalValue.toString().length;
+            let nameLength = this.canvas.ctx.measureText(element.name).width;
+            let valueLength = this.canvas.ctx.measureText(element.values[infoIndex].originalValue.toString()).width;
+            nameValueLengths.push(nameLength + valueLength + this.chart.info.style.nameValueSpace);
         });
-        let maxContentLegth = valuesLength > headerText.length ? valuesLength : headerText.length;
+        let maxContentLegth = headerWidth;
+        for (let i = 0; i < nameValueLengths.length; i++) {
+            if (maxContentLegth < nameValueLengths[i]) {
+                maxContentLegth = nameValueLengths[i];
+            }
+        }
+        this.chart.info.width =
+            this.chart.info.style.leftPadding + maxContentLegth + this.chart.info.style.rightPadding;
+        this.chart.info.height =
+            this.chart.info.style.topPadding +
+            this.chart.info.style.nameValuesBoxShift +
+            (data.yAxis.columns.length > 2 ? this.chart.info.style.lineShift * (data.yAxis.columns.length - 2) : 0) +
+            this.chart.info.style.bottomPadding;
 
-        this.chart.info.width = maxContentLegth * this.chart.fontMultiplier + this.chart.info.style.rightPadding;
+        // select X position for the info box
         if (chartX - this.chart.info.width / 2 + this.chart.info.width >= this.canvas.width) {
+            // draw on the left
             this.chart.info.x = this.canvas.width - this.chart.info.width - this.canvas.style.rightPadding;
         } else if (chartX - this.chart.info.width / 2 <= 0) {
+            // draw on the right
             this.chart.info.x = this.canvas.style.leftPadding;
         } else {
+            // draw in the middle
             this.chart.info.x = chartX - this.chart.info.width / 2;
         }
 
-        this.chart.info.y = this.chart.info.style.topShift;
-        const infoBoxCornersRadius = 10;
+        this.chart.info.y = this.chart.header.height;
 
+        // draw info box border shadow
         this.canvas.ctx.save();
         this.canvas.ctx.strokeStyle =
             this.isNightMode === true ? this.chart.info.style.darkModeColor : this.chart.info.style.color;
@@ -598,11 +618,12 @@ class ChartBuilder {
             this.chart.info.y,
             this.chart.info.width,
             this.chart.info.height,
-            infoBoxCornersRadius
+            this.chart.info.style.cornersRadius
         );
         this.canvas.ctx.stroke();
         this.canvas.ctx.restore();
 
+        // draw info box border
         this.canvas.ctx.fillStyle =
             this.isNightMode === true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
         this.canvas.drawRoundedRect(
@@ -610,25 +631,68 @@ class ChartBuilder {
             this.chart.info.y,
             this.chart.info.width,
             this.chart.info.height,
-            infoBoxCornersRadius
+            this.chart.info.style.cornersRadius
         );
         this.canvas.ctx.fill();
 
         // draw header text
         let headerTextX = this.chart.info.x + this.chart.info.style.leftPadding;
         let headerTextY = this.chart.info.y + this.chart.info.style.topPadding;
-        this.canvas.ctx.font = this.chart.info.style.headerFontSize + 'px ' + this.chart.style.fontFamily;
+        this.canvas.ctx.font =
+            this.chart.info.style.headerFontWeight +
+            ' ' +
+            this.chart.info.style.headerFontSize +
+            'px ' +
+            this.chart.style.fontFamily;
         this.canvas.ctx.fillStyle =
             this.isNightMode === true ? this.chart.style.fontColorDarkMode : this.chart.style.fontColorLightMode;
         this.canvas.ctx.fillText(headerText, headerTextX, headerTextY);
 
+        // draw arrow
+        this.canvas.ctx.beginPath();
+        this.canvas.ctx.lineWidth = 1;
+        this.canvas.ctx.strokeStyle =
+            this.isNightMode === true ? this.chart.info.style.arrowDarkMode : this.chart.info.style.arrowLightModeColor;
+        this.canvas.ctx.moveTo(
+            this.chart.info.x + this.chart.info.width - this.chart.info.style.rightPadding - 4,
+            headerTextY
+        );
+        this.canvas.ctx.lineTo(
+            this.chart.info.x + this.chart.info.width - this.chart.info.style.rightPadding,
+            headerTextY - 4
+        );
+        this.canvas.ctx.lineTo(
+            this.chart.info.x + this.chart.info.width - this.chart.info.style.rightPadding - 4,
+            headerTextY - 8
+        );
+        this.canvas.ctx.stroke();
+
         // draw info lines
-        let columnShift = 0;
+        let columnCount = 0;
         data.yAxis.columns.forEach((element) => {
+            let name = element.name;
             let value = element.values[infoIndex].originalValue;
-            let itemX = this.chart.info.x + this.chart.info.style.leftPadding + columnShift;
-            columnShift = columnShift + value.toString().length * this.chart.fontMultiplier;
-            let itemY = this.chart.info.y + this.chart.info.style.fistLineShift;
+            let nameX = this.chart.info.x + this.chart.info.style.leftPadding;
+            let nameY =
+                this.chart.info.y +
+                this.chart.info.style.nameValuesBoxShift +
+                columnCount * this.chart.info.style.lineShift;
+            let valueX = this.chart.info.x + this.chart.info.width - this.chart.info.style.rightPadding;
+            let valueY = nameY;
+
+            // draw names
+            this.canvas.ctx.font =
+                this.chart.info.style.namesFontWeight +
+                ' ' +
+                this.chart.info.style.namesFontSize +
+                'px ' +
+                this.chart.style.fontFamily;
+            this.canvas.ctx.textAlign = 'start';
+            this.canvas.ctx.fillStyle =
+                this.isNightMode === true ? this.chart.style.fontColorDarkMode : this.chart.style.fontColorLightMode;
+            this.canvas.ctx.fillText(name, nameX, nameY);
+
+            // draw values
             this.canvas.ctx.fillStyle = element.color;
             this.canvas.ctx.font =
                 this.chart.info.style.valuesFontWeight +
@@ -636,9 +700,10 @@ class ChartBuilder {
                 this.chart.info.style.valuesFontSize +
                 'px ' +
                 this.chart.style.fontFamily;
-            this.canvas.ctx.fillText(value, itemX, itemY);
-            this.canvas.ctx.font = this.chart.info.style.namesFontSize + 'px ' + this.chart.style.fontFamily;
-            this.canvas.ctx.fillText(element.name, itemX, itemY + this.chart.info.style.secondLineShift);
+            this.canvas.ctx.textAlign = 'end';
+            this.canvas.ctx.fillText(value, valueX, valueY);
+            this.canvas.ctx.textAlign = 'start';
+            columnCount++;
         });
     }
 
@@ -744,7 +809,7 @@ class ChartBuilder {
 
     _drawButtons() {
         this.chart.buttons.items = [];
-        let buttonCount = 0;
+        let nextX = this.canvas.style.leftPadding;
         for (let i = 0; i < this._getCurrentDataSet().columns.length; i++) {
             let column = this._getCurrentDataSet().columns[i];
             let id = column[0];
@@ -752,38 +817,52 @@ class ChartBuilder {
             let index = this._getArrayIndex(this.columnsToDisplay, id);
             let isHidden = index == -1;
             if (type.toLowerCase() == 'line') {
+                this.canvas.ctx.font = this.chart.buttons.style.fontSize + 'px ' + this.chart.style.fontFamily;
+
                 let name = this._getCurrentDataSet().names[id];
                 let buttonWidth =
-                    this.chart.buttons.style.height +
-                    name.length * this.chart.fontMultiplier +
-                    this.chart.buttons.style.textRightPadding;
+                    this.chart.buttons.style.leftPadding +
+                    // cicle width
+                    (this.chart.buttons.style.height / 3) * 2 +
+                    this.chart.buttons.style.titleLeftPadding +
+                    this.canvas.ctx.measureText(name).width +
+                    this.chart.buttons.style.rightPadding;
 
                 // draw button border
-                let x =
-                    this.canvas.style.leftPadding + buttonCount * (buttonWidth + this.chart.buttons.style.leftPadding);
+                let x = nextX;
+                nextX += buttonWidth + this.chart.buttons.style.rightMargin;
                 let y = this.canvas.height - this.miniMap.height + this.chart.buttons.style.topPadding;
                 let height = this.chart.buttons.style.height;
                 let width = buttonWidth;
 
-                this.canvas.ctx.lineWidth = 0.7;
-                this.canvas.ctx.strokeStyle = this.chart.buttons.style.color;
-                this.canvas.drawRoundedRect(x, y, width, height, 15);
-                this.canvas.ctx.stroke();
-
-                // draw button color circle
-                let radius = height / 3;
+                // draw button color circles
+                this.canvas.ctx.fillStyle = this._getCurrentDataSet().colors[id];
+                let radius = height / 2;
                 let circleX = x + this.chart.buttons.style.height / 2;
                 let circleY = y + this.chart.buttons.style.height / 2;
-                this.canvas.ctx.fillStyle = this._getCurrentDataSet().colors[id];
                 this.canvas.ctx.beginPath();
                 this.canvas.ctx.arc(circleX, circleY, radius, Math.PI + (Math.PI * 2) / 2, false);
+                this.canvas.ctx.arc(
+                    circleX + this.chart.buttons.style.titleLeftPadding + this.canvas.ctx.measureText(name).width,
+                    circleY,
+                    radius,
+                    Math.PI + (Math.PI * 2) / 2,
+                    false
+                );
                 this.canvas.ctx.fill();
+                this.canvas.ctx.fillRect(
+                    x + radius,
+                    y,
+                    this.chart.buttons.style.titleLeftPadding + this.canvas.ctx.measureText(name).width,
+                    this.chart.buttons.style.height
+                );
 
+                // draw checkbox
                 if (isHidden === true) {
                     this.canvas.ctx.fillStyle =
                         this.isNightMode === true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
                     this.canvas.ctx.beginPath();
-                    this.canvas.ctx.arc(circleX + 0.1, circleY + 0.1, radius - 2, Math.PI + (Math.PI * 2) / 2, false);
+                    this.canvas.ctx.arc(circleX, circleY, Math.floor(radius / 2), Math.PI + (Math.PI * 2) / 2, false);
                     this.canvas.ctx.fill();
                 } else {
                     this.canvas.ctx.beginPath();
@@ -791,19 +870,24 @@ class ChartBuilder {
                     this.canvas.ctx.strokeStyle = this.chart.buttons.style.checkColor;
                     this.canvas.ctx.moveTo(circleX - 4, circleY);
                     this.canvas.ctx.lineTo(circleX - 1, circleY + 3);
-                    this.canvas.ctx.lineTo(circleX + 4, circleY - 2);
+                    this.canvas.ctx.lineTo(circleX + 4, circleY - 4);
                     this.canvas.ctx.stroke();
                 }
 
-                this.canvas.ctx.font = this.chart.buttons.style.fontSize + 'px ' + this.chart.style.fontFamily;
-                this.canvas.ctx.fillStyle =
-                    this.isNightMode === true
-                        ? this.chart.style.fontColorDarkMode
-                        : this.chart.style.fontColorLightMode;
-                this.canvas.ctx.fillText(name, circleX + 12, circleY + 4);
+                // draw button title
+                this.canvas.ctx.fillStyle = this.chart.buttons.style.fontColor;
+                this.canvas.ctx.fillText(
+                    name,
+                    circleX + this.chart.buttons.style.titleLeftPadding,
+                    circleY + this.chart.buttons.style.titleTopPadding
+                );
 
-                this.chart.buttons.items.push({ x: x, y: y, id: id, width: buttonWidth });
-                buttonCount++;
+                this.chart.buttons.items.push({
+                    x: x,
+                    y: y,
+                    id: id,
+                    width: buttonWidth - this.chart.buttons.style.rightPadding,
+                });
             }
         }
     }
