@@ -425,7 +425,11 @@ class ChartBuilder {
             0,
             0,
             this.canvas.width,
-            this.canvas.height - this.miniMap.height - this.chart.buttons.height - this.miniMap.style.border.width
+            this.canvas.height -
+                this.miniMap.height -
+                this.chart.buttons.height -
+                this.miniMap.style.frame.width -
+                Math.floor(this.miniMap.style.frame.width / 2)
         );
     }
 
@@ -537,7 +541,7 @@ class ChartBuilder {
         this.canvas.ctx.lineWidth = 1;
         this.canvas.ctx.strokeStyle = this.chart.info.style.color;
         this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(chartX, this.chart.header.height);
+        this.canvas.ctx.moveTo(chartX, this.chart.header.height + this.chart.info.style.cornersRadius);
         this.canvas.ctx.lineTo(
             chartX,
             this.canvas.height - this.miniMap.height - this.chart.style.axis.bottomPadding - this.chart.buttons.height
@@ -609,34 +613,48 @@ class ChartBuilder {
         this.canvas.ctx.save();
         this.canvas.ctx.strokeStyle =
             this.isNightMode === true ? this.chart.info.style.darkModeColor : this.chart.info.style.color;
-        this.canvas.ctx.shadowOffsetX = 1;
-        this.canvas.ctx.shadowOffsetY = 1;
+        this.canvas.ctx.shadowOffsetX = 0.5;
+        this.canvas.ctx.shadowOffsetY = 0.5;
         this.canvas.ctx.shadowBlur = 4;
         this.canvas.ctx.shadowColor =
             this.isNightMode === true
                 ? this.chart.info.style.borderColorDarkMode
                 : this.chart.info.style.borderColorLightMode;
+        this.canvas.ctx.lineWidth = 1;
         this.canvas.drawRoundedRect(
             this.chart.info.x,
             this.chart.info.y,
             this.chart.info.width,
             this.chart.info.height,
-            this.chart.info.style.cornersRadius
+            {
+                tl: this.chart.info.style.cornersRadius,
+                tr: this.chart.info.style.cornersRadius,
+                br: this.chart.info.style.cornersRadius,
+                bl: this.chart.info.style.cornersRadius,
+            },
+            false,
+            true
         );
-        this.canvas.ctx.stroke();
         this.canvas.ctx.restore();
 
         // draw info box border
         this.canvas.ctx.fillStyle =
             this.isNightMode === true ? this.canvas.style.darkModeColor : this.canvas.style.ligthModeColor;
+        this.canvas.ctx.fill();
         this.canvas.drawRoundedRect(
             this.chart.info.x,
             this.chart.info.y,
             this.chart.info.width,
             this.chart.info.height,
-            this.chart.info.style.cornersRadius
+            {
+                tl: this.chart.info.style.cornersRadius,
+                tr: this.chart.info.style.cornersRadius,
+                br: this.chart.info.style.cornersRadius,
+                bl: this.chart.info.style.cornersRadius,
+            },
+            true,
+            false
         );
-        this.canvas.ctx.fill();
 
         // draw header text
         let headerTextX = this.chart.info.x + this.chart.info.style.leftPadding;
@@ -729,82 +747,160 @@ class ChartBuilder {
     _drawMiniMapFrame(data, displayStartIndex, displayEndIndex) {
         this.canvas.ctx.lineJoin = 'miter';
         this.canvas.ctx.lineCap = 'butt';
+        const sharpnessCoef = 0.5;
 
-        let miniMapX = data.xAxis.values[displayStartIndex];
-        let miniMapY = this.canvas.height - this.miniMap.height - this.chart.buttons.height;
+        data.frame.leftDragLine.x = data.xAxis.values[displayStartIndex] - sharpnessCoef;
+        data.frame.leftDragLine.y =
+            this.canvas.height -
+            this.miniMap.height -
+            this.chart.buttons.height -
+            this.miniMap.style.frame.width -
+            sharpnessCoef;
+        data.frame.rightDragLine.x =
+            Math.round(data.xAxis.values[displayEndIndex]) - data.frame.rightDragLine.width + 1;
+        data.frame.rightDragLine.y = data.frame.leftDragLine.y;
 
+        // draw LEFT fade box
+        this.canvas.ctx.fillStyle =
+            this.isNightMode === true
+                ? this.miniMap.style.frame.darkModeFadeColor
+                : this.miniMap.style.frame.lightModeFadeColor;
+        if (data.frame.leftDragLine.x > this.canvas.style.leftPadding) {
+            let x = this.canvas.style.leftPadding - sharpnessCoef;
+            let y = data.frame.leftDragLine.y + this.miniMap.style.frame.width;
+            let width = data.frame.leftDragLine.x - x + data.frame.leftDragLine.width;
+            let height = data.frame.leftDragLine.height - 2 * this.miniMap.style.frame.width;
+            this.canvas.drawRoundedRect(
+                x,
+                y,
+                width,
+                height + this.miniMap.style.frame.width / 2,
+                {
+                    tl: this.miniMap.style.frame.cornerRadius,
+                    tr: 0,
+                    br: 0,
+                    bl: this.miniMap.style.frame.cornerRadius,
+                },
+                true,
+                false
+            );
+        }
+
+        // draw RIGHT fade box
+        if (displayEndIndex < data.xAxis.originalValues.length - 1) {
+            let x = data.frame.rightDragLine.x;
+            let y = data.frame.rightDragLine.y + this.miniMap.style.frame.width;
+            let width = this.miniMap.width - data.frame.rightDragLine.x - this.canvas.style.leftPadding + sharpnessCoef;
+            let height = data.frame.rightDragLine.height - 2 * this.miniMap.style.frame.width;
+            //this.canvas.ctx.fillRect(x, y, width, height);
+            this.canvas.drawRoundedRect(
+                x,
+                y,
+                width,
+                height + this.miniMap.style.frame.width / 2,
+                {
+                    tl: 0,
+                    tr: this.miniMap.style.frame.cornerRadius,
+                    br: this.miniMap.style.frame.cornerRadius,
+                    bl: 0,
+                },
+                true,
+                false
+            );
+        }
+
+        // draw frame lines
         this.canvas.ctx.strokeStyle =
             this.isNightMode === true
-                ? this.miniMap.style.border.darkModeColor
-                : this.miniMap.style.border.lightModeColor;
+                ? this.miniMap.style.frame.darkModeColor
+                : this.miniMap.style.frame.lightModeColor;
+
+        this.canvas.ctx.fillStyle =
+            this.isNightMode === true
+                ? this.miniMap.style.frame.darkModeColor
+                : this.miniMap.style.frame.lightModeColor;
 
         // left line
-        this.canvas.ctx.lineWidth = this.miniMap.style.dragLineWidth;
-        this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(miniMapX + Math.floor(this.miniMap.style.dragLineWidth / 2) - 0.6, miniMapY);
-        this.canvas.ctx.lineTo(
-            miniMapX + Math.floor(this.miniMap.style.dragLineWidth / 2) - 0.6,
-            miniMapY + this.miniMap.height - this.miniMap.style.border.width
+        this.canvas.drawRoundedRect(
+            data.frame.leftDragLine.x,
+            data.frame.leftDragLine.y,
+            data.frame.leftDragLine.width,
+            data.frame.leftDragLine.height + this.miniMap.style.frame.width / 2,
+            {
+                tl: this.miniMap.style.frame.cornerRadius,
+                tr: 0,
+                br: 0,
+                bl: this.miniMap.style.frame.cornerRadius,
+            },
+            true,
+            false
         );
-        this.canvas.ctx.stroke();
-        data.frame.leftDragLine.x = miniMapX;
-        data.frame.leftDragLine.y = miniMapY;
 
         // rigth line
-        let rightLineX = Math.round(data.xAxis.values[displayEndIndex]) - this.miniMap.style.dragLineWidth / 2 + 1;
-        this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(rightLineX, miniMapY);
-        this.canvas.ctx.lineTo(rightLineX, miniMapY + this.miniMap.height - this.miniMap.style.border.width);
-        this.canvas.ctx.stroke();
-        data.frame.rightDragLine.x = Math.round(data.xAxis.values[displayEndIndex]) - this.miniMap.style.border.width;
-        data.frame.rightDragLine.y = miniMapY;
+        this.canvas.drawRoundedRect(
+            data.frame.rightDragLine.x,
+            data.frame.rightDragLine.y,
+            data.frame.rightDragLine.width,
+            data.frame.rightDragLine.height + this.miniMap.style.frame.width / 2,
+            {
+                tl: 0,
+                tr: this.miniMap.style.frame.cornerRadius,
+                br: this.miniMap.style.frame.cornerRadius,
+                bl: 0,
+            },
+            true,
+            false
+        );
 
         // draw drag tick lines
         this.canvas.ctx.lineWidth = 2;
-        this.canvas.ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+        this.canvas.ctx.strokeStyle = this.miniMap.style.frame.dragTickLineColor;
         this.canvas.ctx.beginPath();
         this.canvas.ctx.moveTo(
-            data.frame.leftDragLine.x + Math.floor(this.miniMap.style.dragLineWidth / 2) - 0.5,
-            data.frame.leftDragLine.y + this.miniMap.height / 2 - 6
+            data.frame.leftDragLine.x + data.frame.leftDragLine.width / 2,
+            data.frame.leftDragLine.y + this.miniMap.height / 2 - this.miniMap.style.frame.dragTickLineSize / 2
         );
         this.canvas.ctx.lineTo(
-            data.frame.leftDragLine.x + Math.floor(this.miniMap.style.dragLineWidth / 2) - 0.5,
-            data.frame.leftDragLine.y + this.miniMap.height / 2 + 6
+            data.frame.leftDragLine.x + data.frame.leftDragLine.width / 2,
+            data.frame.leftDragLine.y + this.miniMap.height / 2 + this.miniMap.style.frame.dragTickLineSize / 2
         );
         this.canvas.ctx.stroke();
 
         this.canvas.ctx.beginPath();
         this.canvas.ctx.moveTo(
-            data.frame.rightDragLine.x - 0.7,
-            data.frame.rightDragLine.y + this.miniMap.height / 2 - 6
+            data.frame.rightDragLine.x + data.frame.rightDragLine.width / 2,
+            data.frame.rightDragLine.y + this.miniMap.height / 2 - this.miniMap.style.frame.dragTickLineSize / 2
         );
         this.canvas.ctx.lineTo(
-            data.frame.rightDragLine.x - 0.7,
-            data.frame.rightDragLine.y + this.miniMap.height / 2 + 6
+            data.frame.rightDragLine.x + data.frame.rightDragLine.width / 2,
+            data.frame.rightDragLine.y + this.miniMap.height / 2 + this.miniMap.style.frame.dragTickLineSize / 2
         );
         this.canvas.ctx.stroke();
 
         // top line
         this.canvas.ctx.strokeStyle =
             this.isNightMode === true
-                ? this.miniMap.style.border.darkModeColor
-                : this.miniMap.style.border.lightModeColor;
-        this.canvas.ctx.lineWidth = this.miniMap.style.border.width;
+                ? this.miniMap.style.frame.darkModeColor
+                : this.miniMap.style.frame.lightModeColor;
+        this.canvas.ctx.lineWidth = this.miniMap.style.frame.width;
         this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(miniMapX - 0.5, miniMapY - this.miniMap.style.border.width / 2);
+        this.canvas.ctx.moveTo(
+            data.frame.leftDragLine.x + data.frame.leftDragLine.width - sharpnessCoef,
+            data.frame.leftDragLine.y + this.miniMap.style.frame.width / 2
+        );
         this.canvas.ctx.lineTo(
-            Math.round(data.xAxis.values[displayEndIndex]) + 1,
-            miniMapY - this.miniMap.style.border.width / 2
+            data.frame.rightDragLine.x,
+            data.frame.leftDragLine.y + this.miniMap.style.frame.width / 2
         );
         this.canvas.ctx.stroke();
 
         // bottom line
         this.canvas.ctx.beginPath();
-        this.canvas.ctx.moveTo(miniMapX - 0.6, miniMapY + this.miniMap.height - this.miniMap.style.border.width / 2);
-        this.canvas.ctx.lineTo(
-            Math.round(data.xAxis.values[displayEndIndex]) + 1,
-            miniMapY + this.miniMap.height - this.miniMap.style.border.width / 2
+        this.canvas.ctx.moveTo(
+            data.frame.leftDragLine.x + data.frame.leftDragLine.width - sharpnessCoef,
+            data.frame.leftDragLine.y + data.frame.leftDragLine.height
         );
+        this.canvas.ctx.lineTo(data.frame.rightDragLine.x, data.frame.leftDragLine.y + data.frame.leftDragLine.height);
         this.canvas.ctx.stroke();
 
         // set mini map frame coordinates
@@ -812,31 +908,6 @@ class ChartBuilder {
         data.frame.y = data.frame.leftDragLine.y;
         data.frame.height = data.frame.leftDragLine.height;
         data.frame.width = data.frame.rightDragLine.x - data.frame.x;
-
-        this.canvas.ctx.fillStyle =
-            this.isNightMode === true
-                ? this.miniMap.style.border.darkModeFadeColor
-                : this.miniMap.style.border.lightModeFadeColor;
-
-        // draw LEFT fade box
-        if (data.frame.leftDragLine.x > this.canvas.style.leftPadding) {
-            let x = this.canvas.style.leftPadding - 0.5;
-            let y = miniMapY - this.miniMap.style.border.width / 2 - this.miniMap.style.border.width / 2;
-            let width = data.frame.leftDragLine.x - this.canvas.style.leftPadding;
-            let height =
-                this.miniMap.height + -this.miniMap.style.border.width / 2 + this.miniMap.style.border.width + 1;
-            this.canvas.ctx.fillRect(x, y, width, height);
-        }
-
-        // draw RIGHT fade box
-        if (data.frame.rightDragLine.x + this.miniMap.style.dragLineWidth < this.miniMap.width) {
-            let x = data.frame.rightDragLine.x + 3;
-            let y = miniMapY - this.miniMap.style.border.width / 2 - this.miniMap.style.border.width / 2;
-            let width = this.miniMap.width - data.frame.rightDragLine.x - this.canvas.style.leftPadding - 2;
-            let height =
-                this.miniMap.height + -this.miniMap.style.border.width / 2 + this.miniMap.style.border.width + 1;
-            this.canvas.ctx.fillRect(x, y, width, height);
-        }
     }
 
     _drawButtons() {

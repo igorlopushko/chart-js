@@ -16,8 +16,8 @@ class MiniMapData {
         };
         this.frame = {
             minDisplayPositions: 10,
-            leftDragLine: { x: 0, y: 0, width: 8, height: 50 },
-            rightDragLine: { x: 0, y: 0, width: 8, height: 50 },
+            leftDragLine: { x: 0, y: 0, width: 10, height: 54 },
+            rightDragLine: { x: 0, y: 0, width: 10, height: 54 },
             x: 0,
             y: 0,
             width: 0,

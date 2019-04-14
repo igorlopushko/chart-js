@@ -12,12 +12,14 @@ class MiniMap {
 
         this.style = {
             lineWidth: 1,
-            dragLineWidth: 8,
             // is used to reduse issue with targeting exact drag line position
             dragErrorPixelFactor: 10,
-            border: {
-                lightModeColor: 'rgba(221, 234, 243, 0.8)',
-                darkModeColor: 'rgba(58, 78, 98, 0.8)',
+            frame: {
+                dragTickLineColor: 'rgba(255, 255, 255, 1)',
+                dragTickLineSize: 12,
+                cornerRadius: 7,
+                lightModeColor: 'rgba(221, 234, 243, 1)',
+                darkModeColor: 'rgba(58, 78, 98, 1)',
                 lightModeFadeColor: 'rgba(245, 249, 251, 0.8)',
                 darkModeFadeColor: 'rgba(25, 33, 42, 0.6)',
                 width: 2,
